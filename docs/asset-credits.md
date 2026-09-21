@@ -43,7 +43,7 @@ and mixing still need listening on a phone.
 
 ## Original effects
 
-Reveal, mismatch, match, completion, next-level tones, and the longer card-riffle
-sound are project-authored synthesis from `scripts/generate_audio.py`. It uses only
+Reveal, mismatch, match, completion, next-level tones, the longer card-riffle,
+and collection fireworks/dance/wave sounds are project-authored synthesis from `scripts/generate_audio.py`. It uses only
 Python's standard library and no sampled recording. Run with `--check` to verify
 checked-in WAVs against the generator. Regeneration does not replace the crowd OGGs.

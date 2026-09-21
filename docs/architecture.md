@@ -100,7 +100,23 @@ cards open Discover all for claiming rewards. Both views filter by theme.
 corner diamonds, an explicit ownership label and an animated cheering pose. Unowned
 cards use neutral surfaces and still poses. Collection runs while gameplay pauses,
 but stops animations offscreen, when hidden, in the background, or with Reduce motion.
-Claims require an explicit Collect button after selection. `GameScreen` saves ownership and credit
+Claims require an explicit Collect button after selection.
+
+`CollectionFireworks` is one reusable, input-transparent effect layer. Eligible card
+selection starts a preview burst without granting ownership; the successful saved
+claim starts a second burst after the refreshed layout settles. Navigation cancels
+stale deferred celebrations, and save failures cannot trigger confirmation effects.
+`CollectionPerformer` uses the existing cutout art for three dances and two raised-arm
+wave variations. Clapping poses use dances. Reactions avoid immediate repeats per
+character; rapid taps are throttled and reuse the same actor. They never modify the
+progress model. Reduce motion substitutes still captions and fading static sparkles.
+
+The collection owns a separate four-voice `GameAudio` pool that explicitly allows
+UI sounds while gameplay is paused. Its visibility/background gate still suppresses
+all playback, and it reads the saved sound preference. The main gameplay audio pool
+keeps its normal pause gate. Closing, filtering or backgrounding stops collection
+sounds; returning does not replay an interrupted sound or performance.
+ `GameScreen` saves ownership and credit
 consumption together, rolling back only those two fields if a write fails; it never
 replaces the live round or its in-flight selection. All-owned collections preserve
 extra credits. The feature is local game progression, independent of paid ownership.

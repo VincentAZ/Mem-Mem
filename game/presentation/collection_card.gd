@@ -9,9 +9,11 @@ var selected: bool = false:
 		queue_redraw()
 var reduced_motion: bool = false
 var animation_active: bool = false
-var person: Walker
+var person: CollectionPerformer
 var name_label: Label
 var badge: Label
+var feedback_left: float = 0.0
+var tap_cooldown: float = 0.0
 
 func _ready() -> void:
 	flat = true
@@ -23,7 +25,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	focus_entered.connect(queue_redraw)
 	focus_exited.connect(queue_redraw)
-	person = Walker.new()
+	person = CollectionPerformer.new()
 	person.variant = character * 2
 	person.phase = character * 0.83
 	person.style = character % 3
@@ -44,18 +46,43 @@ func _ready() -> void:
 
 func _layout() -> void:
 	person.scale = Vector2.ONE * minf(1.23, (size.x - 22) / 64.0)
-	person.position = Vector2(size.x / 2, 23)
+	person.position = Vector2(size.x / 2, 30)
 	name_label.position = Vector2(4, 166)
 	name_label.size = Vector2(size.x - 8, 22)
 	badge.position = Vector2(4, 188)
 	badge.size = Vector2(size.x - 8, 18)
 	queue_redraw()
 
-func _process(_delta: float) -> void:
+func react(kind: int) -> bool:
+	if not owned or not animation_active or tap_cooldown > 0.0:
+		return false
+	tap_cooldown = 0.20
+	feedback_left = CollectionPerformer.DURATION
+	badge.text = ["SIDE STEP!", "HAPPY FEET!", "TWIST!", "HEY THERE!", "HELLO!"][kind]
+	if not reduced_motion:
+		person.perform(kind)
+	return true
+
+func stop_feedback() -> void:
+	feedback_left = 0.0
+	tap_cooldown = 0.0
+	if person != null:
+		person.stop_reaction()
+	if badge != null:
+		badge.text = "COLLECTED" if owned else "TO DISCOVER"
+
+func _process(delta: float) -> void:
+	tap_cooldown = maxf(0.0, tap_cooldown - delta)
+	if feedback_left > 0.0:
+		feedback_left = maxf(0.0, feedback_left - delta)
+		if feedback_left == 0.0:
+			stop_feedback()
 	# The panel runs while gameplay is paused. Backgrounding and Reduce motion
 	# explicitly suppress these cosmetic animations; scrolled-off cards stop too.
 	var viewport_rect: Rect2 = (get_parent().get_parent() as Control).get_global_rect()
 	var moving: bool = owned and animation_active and not reduced_motion and is_visible_in_tree() and viewport_rect.intersects(get_global_rect())
+	if not moving and person.reaction >= 0:
+		stop_feedback()
 	if person.reduced_motion == moving:
 		person.reduced_motion = not moving
 

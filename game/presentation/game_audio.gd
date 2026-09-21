@@ -9,6 +9,9 @@ const CUES: Dictionary = {
 	&"mismatch": preload("res://assets/audio/mismatch.wav"),
 	&"complete": preload("res://assets/audio/complete.wav"),
 	&"next": preload("res://assets/audio/next.wav"),
+	&"fireworks": preload("res://assets/audio/fireworks.wav"),
+	&"dance": preload("res://assets/audio/dance.wav"),
+	&"wave": preload("res://assets/audio/wave.wav"),
 }
 var enabled: bool = true:
 	set(value):
@@ -22,11 +25,13 @@ var suspended: bool = false:
 			stop_all()
 var voices: Array[AudioStreamPlayer] = []
 var next_voice: int = 0
+# Only the collection overlay enables this on its own isolated audio pool.
+var allow_while_paused: bool = false
 const CROWD: Array[AudioStream] = [preload("res://assets/audio/crowd-1.ogg"), preload("res://assets/audio/crowd-2.ogg"), preload("res://assets/audio/crowd-3.ogg")]
 var last_cheer: int = -1
 
 func play_cheer() -> bool:
-	if not enabled or suspended or get_tree().paused or voices.is_empty():
+	if not enabled or suspended or (get_tree().paused and not allow_while_paused) or voices.is_empty():
 		return false
 	last_cheer = (last_cheer + randi_range(1, CROWD.size() - 1)) % CROWD.size()
 	var voice: AudioStreamPlayer = voices[next_voice]
@@ -47,7 +52,7 @@ func _ready() -> void:
 		voices.append(voice)
 
 func play_cue(cue: StringName) -> bool:
-	if not enabled or suspended or get_tree().paused or not CUES.has(cue) or voices.is_empty():
+	if not enabled or suspended or (get_tree().paused and not allow_while_paused) or not CUES.has(cue) or voices.is_empty():
 		return false
 	var voice: AudioStreamPlayer = voices[next_voice]
 	next_voice = (next_voice + 1) % voices.size()

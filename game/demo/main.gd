@@ -937,6 +937,7 @@ func _collect_character(character: int) -> void:
 		collection_panel.summary.text = "Couldn't save. Your choice is still available. Try again."
 		return
 	collection_panel.refresh()
+	collection_panel.celebrate_claim(character)
 	collection_panel.summary.text = "%s collected! %d / 24 in your collection.\n%d choices saved." % [PeopleCatalog.NAMES[character], progress.collected.size(), progress.choice_tokens]
 	_update_hud(false)
 

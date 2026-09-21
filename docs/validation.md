@@ -1,56 +1,75 @@
-# Collection reward correction — 0.5.1
+# Collection reactions validation — 0.5.2
 
-The automatic every-third-board surprise reward has been removed. Only exact
-100% accuracy earns one saved choice. Completing a board never adds a character;
-the player must select one and confirm Collect. Existing collection ownership,
-saved choices, board layouts and points are preserved.
+Validated locally on 2026-09-21. The collection now celebrates eligible selections
+with fireworks, celebrates successful saved claims, and responds to owned-character
+taps with short randomized dances or greetings plus original sound effects.
 
-Retired discovery fields remain readable for compatibility with schema 2/3 saves,
-but they cannot grant ownership and no longer appear in result or collection copy.
+## Rules, saves and audio — passed
 
-## Validation
+`./scripts/validate.sh`: Godot import/script checks and **14,073 assertions** passed
+with zero failures. Existing perfect-only collection rules, choice banking,
+restoration and 50%-accuracy regressions remain covered.
 
-`./scripts/validate.sh`: **14,064 checks, zero failures**, including:
+The collection's separate audio pool can play while gameplay is paused; tests verify
+that background/hidden gating and mute still override that permission. The gameplay
+pool retains its original pause behavior. The three new WAV files are deterministic
+project-authored synthesis, checked against `scripts/generate_audio.py`; peak levels
+do not clip and all cues remain shorter than 1.5 seconds.
 
-- Six consecutive boards at exactly 50% accuracy never earn choices or characters,
-  even when an old save is one board away from the retired surprise threshold.
-- Perfect completion grants one choice and leaves ownership unchanged.
-- Advancing, saving and restarting preserve unclaimed choices without auto-selection.
-- Only the player's explicit valid selection adds the chosen character.
-- Old surprise metadata still loads without deleting existing characters or boards.
-- Completion/reload idempotency, scoring, save recovery, 16-card generation and
-  service simulations continue to pass.
+## Desktop UI — passed
 
-`xvfb-run -a ./scripts/smoke_desktop.sh`: passed. The rendered test reproduces a
-six-pair board at 50% accuracy with the retired surprise counter at its old threshold.
-It verifies zero collection awards, no misleading reward message, and saved ownership
-remaining unchanged. Perfect-choice selection, collection animations, 16-card play,
-settings, sound and lifecycle checks also passed.
+`xvfb-run -a ./scripts/smoke_desktop.sh` uses isolated test saves and actual input:
 
-`python3 scripts/smoke_android.py --reset-test-progress`: passed on the isolated
-API 35 emulator. Real touch input made three mismatches and three matches on the
-first board (exactly 50%), then verified no character or choice after a restart.
-The second board earned a perfect choice; the test selected Maya and confirmed
-Collect. After clearing levels 1–8, the state held **4,530 banked points**, **6 saved
-choices**, and **only Maya collected**. No automatic characters appeared on the
-third or sixth boards. Collection animation, Reduce motion, appearance, offline
-restart and pause/resume passed; no Godot or Android runtime errors were recorded.
+- Browsing without an earned choice has no reward fireworks or sound.
+- Selecting an eligible character produces fireworks and sound while gameplay stays
+  paused; it neither changes ownership nor consumes the choice.
+- A confirmed, successfully saved claim triggers a second burst. Failed saves retain
+  ownership/choices and do not show a success celebration.
+- Repeated owned-character taps choose different performances without immediate
+  repeats, with the matching dance/wave cue. Score, board, ownership and choices
+  remain unchanged.
+- Backgrounding clears tap effects and stops their sounds. Reduced motion uses still
+  reactions, and muted taps keep visual feedback without sound.
+- The original matching loop, explicit Next level, 16-card board and celebration,
+  collection, settings, lifecycle and the six-pair 50% regression continue to pass.
+
+Selection/confirmation fireworks and the five performer variations were captured
+and visually inspected. Performances use the existing 2D cutouts; clapping poses
+use dances, while raised-arm poses also support waves. The art is not a 3D rig.
+
+## Android collection interaction — passed
+
+`python3 scripts/smoke_collection.py` installs the current APK on the dedicated API
+35 emulator, using the owned-character/earned-choice fixture from `smoke_android.py`.
+It spends one test-emulator choice; it never operates on physical-phone saves.
+
+- Updating the APK preserved the exact existing saved progress and collection.
+- Five actual owned-character taps produced different reaction captions without
+  immediate repeats, leaving ownership and choices unchanged.
+- Background/resume during a reaction preserved the board.
+- Selection fireworks preceded confirmation without granting ownership. Collect then
+  added exactly the selected character and consumed one choice.
+- Screenshot comparisons verified a still character after tapping with Reduce motion.
+- Restart preserved the explicit claim, current board and banked points.
+- No Godot script errors or Android fatal exceptions appeared in the runtime log.
+
+The full eight-level Android gameplay run is recorded for 0.5.1 in
+[validation-choice-only.md](validation-choice-only.md); this release ran the targeted
+Android collection tests plus the full desktop and headless suites.
 
 Artifacts: `build/tests.log`, `build/desktop-smoke.log`,
-`build/android-collection-results.json`, `build/android-collection-runtime.log`,
-and screenshots under `build/screenshots/`. Desktop tests use isolated saves;
-Android resets only the dedicated emulator's game progress. Player desktop and
-physical-phone saves were not changed.
+`build/android-reactions-results.json`, `build/android-reactions-runtime.log`, and
+`build/screenshots/{smoke-,android-reactions-}*.png`.
 
-## APK
+## APK — passed
 
-`build/mem-mem-debug.apk`: **0.5.1-choice-only**, version code **7**, about 171.3 MiB.
-Godot export, signature verification, native-plugin inclusion and 16 KB ZIP/ELF
+`build/mem-mem-debug.apk`: **0.5.2-collection-reactions**, version code **8**.
+Export, signature verification, native-plugin inclusion and 16 KB ZIP/native ELF
 alignment checks passed.
 
-SHA-256: `ca0d6a02602d4b435e935b278bb068b0be104f754ab4e52c0668b3600cfbcb98`.
+SHA-256: `1f49e0e118eda720760ef22ae1cd37c57ccca8a82dc53f76606200f583d65f1f`.
 
-Physical-phone feedback and live store/consent/advertising account validation remain
-pending. Real-money purchasing remains disabled. See [store setup](store-setup.md).
-Earlier layout and collection validation is archived in
-[validation-collection.md](validation-collection.md).
+Physical-phone animation smoothness and listening/volume feedback remain pending;
+emulator output was muted, so automated playback checks do not establish perceived
+sound quality. Live billing, ads and consent still require configured accounts.
+Real-money purchasing remains disabled. See [store setup](store-setup.md).

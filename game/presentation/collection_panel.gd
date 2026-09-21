@@ -17,11 +17,19 @@ var discover: Button
 var back: Button
 var entries: Array[Button] = []
 var animation_allowed: bool = true
+var fireworks: CollectionFireworks
+var audio: GameAudio = GameAudio.new()
+var last_reactions: Dictionary = {}
+var last_selection_msec: int = -1000
+var presentation_revision: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	z_index = 12
+	audio.allow_while_paused = true
+	audio.suspended = true
+	add_child(audio)
 	var margin: MarginContainer = MarginContainer.new()
 	for side: String in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 20)
@@ -94,6 +102,10 @@ func _ready() -> void:
 			character_chosen.emit(selected)
 	)
 	column.add_child(action)
+	fireworks = CollectionFireworks.new()
+	fireworks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fireworks.z_index = 2
+	add_child(fireworks)
 	visibility_changed.connect(_sync_animation)
 	hide()
 
@@ -112,6 +124,9 @@ func _set_view(only_owned: bool) -> void:
 	refresh()
 
 func refresh() -> void:
+	presentation_revision += 1
+	fireworks.clear()
+	audio.stop_all()
 	add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.background, 0, 0))
 	tally.text = "%02d / 24" % progress.collected.size()
 	summary.text = "%d character %s saved\n100%% accuracy earns your choice of any character." % [progress.choice_tokens, "choice" if progress.choice_tokens == 1 else "choices"]
@@ -144,10 +159,45 @@ func refresh() -> void:
 	_sync_animation()
 
 func _pick(character: int) -> void:
+	if not visible or not animation_allowed:
+		return
 	selected = character
+	var picked: CollectionCard
 	for entry: CollectionCard in entries:
 		entry.selected = entry.character == character
+		if entry.selected:
+			picked = entry
 	_update_action()
+	if picked == null:
+		return
+	if picked.owned:
+		var options: Array[int] = [0, 1, 2]
+		if character % 3 != 2:
+			options.append_array([3, 4])
+		options.erase(int(last_reactions.get(character, -1)))
+		var kind: int = options[randi_range(0, options.size() - 1)]
+		if picked.react(kind):
+			last_reactions[character] = kind
+			audio.play_cue(&"dance" if kind < 3 else &"wave")
+	elif progress.choice_tokens > 0 and Time.get_ticks_msec() - last_selection_msec >= 200:
+		last_selection_msec = Time.get_ticks_msec()
+		_burst_at(picked)
+
+func _burst_at(card: CollectionCard, confirmed: bool = false) -> void:
+	var center: Vector2 = card.global_position - global_position + Vector2(card.size.x / 2, 76)
+	fireworks.burst(center, progress.reduced_motion, confirmed)
+	audio.play_cue(&"fireworks")
+
+func celebrate_claim(character: int) -> void:
+	# Wait for refreshed cards to be laid out; navigation cancels stale celebrations.
+	var revision: int = presentation_revision
+	await get_tree().process_frame
+	if revision != presentation_revision or not visible or not animation_allowed:
+		return
+	for entry: CollectionCard in entries:
+		if entry.character == character and entry.owned:
+			_burst_at(entry, true)
+			return
 
 func _update_action() -> void:
 	action.disabled = selected < 0 or progress.choice_tokens <= 0 or progress.collected.has(selected)
@@ -166,10 +216,15 @@ func set_animation_active(value: bool) -> void:
 	_sync_animation()
 
 func _sync_animation() -> void:
+	audio.enabled = progress.sound if progress != null else false
+	audio.suspended = not (animation_allowed and visible)
+	if audio.suspended and fireworks != null:
+		fireworks.clear()
 	for entry: CollectionCard in entries:
 		entry.animation_active = animation_allowed and visible
 		entry.set_process(entry.animation_active)
 		if not entry.animation_active:
+			entry.stop_feedback()
 			entry.person.reduced_motion = true
 
 func _unhandled_key_input(event: InputEvent) -> void:

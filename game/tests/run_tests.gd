@@ -361,6 +361,15 @@ func _test_audio() -> void:
 	sound.suspended = false
 	paused = true
 	check(not sound.play_cue(&"reveal"), "paused gameplay cannot make sound")
+	sound.allow_while_paused = true
+	check(sound.play_cue(&"wave"), "collection's isolated pool can play an explicit reaction while the board is paused")
+	sound.suspended = true
+	check(not sound.play_cue(&"dance"), "background/hidden collection remains silent even with overlay audio enabled")
+	sound.suspended = false
+	sound.enabled = false
+	check(not sound.play_cue(&"fireworks"), "collection sound honors mute while paused")
+	sound.enabled = true
+	sound.stop_all()
 	paused = false
 	check(not sound.play_cue(&"missing"), "unavailable cue fails without interrupting gameplay")
 	check(sound.play_cue(&"next"), "unmuting and resuming allows the next cue")

@@ -43,6 +43,16 @@ adb devices
 adb -s YOUR_DEVICE_SERIAL install -r build/mem-mem-debug.apk
 ```
 
+To send the same APK to testers, keep this running and share the printed link:
+
+```bash
+./scripts/share_android.sh
+```
+
+Testers open the link on their phone, tap **Download and install**, allow the
+browser to install unknown apps, then open Mem-Mem. Same-Wi-Fi testers can use
+the LAN address for a faster copy. Do not stop the script until downloads finish.
+
 The APK supports Android 8+ (API 26), targets API 36, and contains arm64-v8a and
 x86_64 native libraries. It uses package `io.github.vincentaz.memmem` and a local
 debug certificate. Do not publish this debug build to production.
@@ -96,8 +106,12 @@ only owned characters with gold frames, warm backgrounds and animated cheering p
 uncollected character, then press **Collect** to spend one earned choice. The
 character is saved immediately. Duplicate selections cannot spend choices; a failed
 save retains the choice. Finishing a collection preserves extra choices for later.
-The result card opens Discover all directly. Reduce motion keeps collection poses
-still; hidden, offscreen and backgrounded collection animations stop.
+The result card opens Discover all directly. Tapping an eligible character selection
+triggers fireworks; confirming Collect celebrates only after the save succeeds.
+Tapping an owned character plays a short random dance or greeting with sound, without
+immediate repeats. Reactions never spend choices or change gameplay. Reduce motion
+uses still poses/captions and a fading sparkle; muted sound stays muted. Closing the
+collection or backgrounding clears effects and stops its sounds.
 
 Sound includes original short effects, a 1.3-second card riffle, and three crowd
 variations derived from two CC0 recordings. **Settings → Sound effects** saves your
@@ -120,6 +134,8 @@ xvfb-run -a ./scripts/smoke_desktop.sh
 # Dedicated test emulator only; resets its game progress (not desktop saves):
 source scripts/env.sh
 python3 scripts/smoke_android.py --reset-test-progress
+# With the emulator fixture above: installs the APK and spends one test choice.
+python3 scripts/smoke_collection.py
 ```
 
 The Android screenshot checks require Pillow (`python3-pil` on Debian/Ubuntu).

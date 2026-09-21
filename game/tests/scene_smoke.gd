@@ -3,12 +3,14 @@ extends Node
 var app: GameScreen
 var failures: int = 0
 var cues: Array[StringName] = []
+var collection_cues: Array[StringName] = []
 var layout: Dictionary = {}
 
 func run(screen: GameScreen) -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	app = screen
 	app.audio.cue_played.connect(func(cue: StringName) -> void: cues.append(cue))
+	app.collection_panel.audio.cue_played.connect(func(cue: StringName) -> void: collection_cues.append(cue))
 	await _wait_phase("preview")
 	_check(app.phase == "preview", "opening preview is visible after the shuffle")
 	for index: int in range(app.tiles.size()):
@@ -30,6 +32,8 @@ func run(screen: GameScreen) -> void:
 	await _capture("empty-collection")
 	await _click(app.collection_panel.discover.global_position + app.collection_panel.discover.size * 0.5)
 	_check(app.collection_panel.entries.size() == 24 and app.collection_panel.action.disabled, "Discover all exposes the full catalog without claiming unearned characters")
+	await _click(app.collection_panel.entries[0].global_position + app.collection_panel.entries[0].size * 0.5)
+	_check(app.collection_panel.fireworks.origins.is_empty() and collection_cues.is_empty(), "browsing without an earned choice does not celebrate a nonexistent reward")
 	await _capture("discover")
 	await _escape()
 	var model: MatchRound = app.progress.round_state
@@ -163,14 +167,23 @@ func run(screen: GameScreen) -> void:
 	if app.progress.collected.has(int(pick.get_meta("character"))):
 		pick = app.collection_panel.entries[1]
 	_record_layout("first_character", app.collection_panel.entries[0])
+	_record_layout("second_character", app.collection_panel.entries[1])
+	_record_layout("discover", app.collection_panel.discover)
+	_record_layout("mine", app.collection_panel.mine)
 	_record_layout("claim", app.collection_panel.action)
 	var chosen: int = int(pick.get_meta("character"))
 	await _click(pick.global_position + pick.size * 0.5)
 	_check(not app.collection_panel.action.disabled, "selecting an uncollected character enables the claim")
+	_check(not app.collection_panel.fireworks.origins.is_empty() and collection_cues.back() == &"fireworks", "tapping an eligible selection bursts fireworks with sound while gameplay stays paused")
+	_check(not app.progress.collected.has(chosen) and app.progress.choice_tokens == credits_before, "selection fireworks do not collect or spend a choice before confirmation")
+	await get_tree().create_timer(0.22).timeout
+	await _capture("selection-fireworks")
 	await _click(app.collection_panel.action.global_position + app.collection_panel.action.size * 0.5)
 	_check(app.progress.collected.has(chosen) and app.progress.choice_tokens == credits_before - 1, "confirmed choice collects the selected character once")
 	var claimed_save: GameProgress = app.store.load_progress()
 	_check(claimed_save.collected == app.progress.collected and claimed_save.choice_tokens == app.progress.choice_tokens, "collection ownership and remaining choices persist together")
+	await get_tree().create_timer(0.20).timeout
+	_check(app.collection_panel.fireworks.origins.size() == 3, "successful saved claim has a confirmation burst")
 	await _capture("collected")
 	await _click(app.collection_panel.mine.global_position + app.collection_panel.mine.size * 0.5)
 	_check(app.collection_panel.owned_only and app.collection_panel.entries.size() == app.progress.collected.size(), "My collection shows only owned characters")
@@ -180,7 +193,25 @@ func run(screen: GameScreen) -> void:
 	var owned_phase: float = owned_card.person.phase
 	await get_tree().create_timer(0.25).timeout
 	_check(owned_card.person.phase != owned_phase and get_tree().paused, "owned characters animate while the game is paused behind collection")
+	var owned_snapshot: Dictionary = app.progress.snapshot()
+	var previous_reaction: int = -1
+	for tap: int in range(6):
+		await _click(owned_card.global_position + owned_card.size * 0.5)
+		_check(owned_card.person.reaction >= 0 and owned_card.person.reaction != previous_reaction, "owned-character taps start a random performance without an immediate repeat")
+		previous_reaction = owned_card.person.reaction
+		_check(collection_cues.back() == (&"dance" if previous_reaction < 3 else &"wave"), "each performance has its matching collection sound")
+		await get_tree().create_timer(0.24).timeout
+	_check(app.progress.snapshot() == owned_snapshot, "playing with owned characters cannot spend choices or change gameplay/ownership")
+	await _capture("owned-reaction")
+	# Inspect every routine through the same performer used by tapped cards.
+	for routine: int in range(5):
+		owned_card.react(routine)
+		await get_tree().create_timer(0.30).timeout
+		await _capture("reaction-%d" % routine)
 	app._notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	_check(owned_card.person.reaction == -1 and app.collection_panel.fireworks.origins.is_empty(), "backgrounding clears tap effects without replaying them later")
+	for voice: AudioStreamPlayer in app.collection_panel.audio.voices:
+		_check(not voice.playing, "backgrounding stops collection sound effects")
 	owned_phase = owned_card.person.phase
 	await get_tree().create_timer(0.2).timeout
 	_check(owned_card.person.phase == owned_phase, "backgrounding freezes collection animations")
@@ -194,6 +225,16 @@ func run(screen: GameScreen) -> void:
 	owned_phase = owned_card.person.phase
 	await get_tree().create_timer(0.25).timeout
 	_check(owned_card.person.phase == owned_phase, "Reduce motion leaves owned characters still")
+	await _click(owned_card.global_position + owned_card.size * 0.5)
+	_check(owned_card.person.reaction == -1 and owned_card.person.phase == owned_phase and owned_card.feedback_left > 0, "Reduce motion gives a still reaction caption instead of dancing")
+	app.progress.sound = false
+	app.collection_panel._sync_animation()
+	await get_tree().create_timer(0.22).timeout
+	var collection_sound_count: int = collection_cues.size()
+	await _click(owned_card.global_position + owned_card.size * 0.5)
+	_check(collection_cues.size() == collection_sound_count, "muted collection taps still respond without sound")
+	app.progress.sound = true
+	app.collection_panel._sync_animation()
 	app.progress.reduced_motion = false
 	app.collection_panel.refresh()
 	var empty_theme: int = 0
@@ -215,6 +256,7 @@ func run(screen: GameScreen) -> void:
 	app.store.prefix = "user://missing_directory/failed_collection"
 	app._collect_character(candidate)
 	_check(app.progress.collected == collection_before and app.progress.choice_tokens == saved_credits, "failed collection write retains both ownership and the choice")
+	_check(app.collection_panel.fireworks.origins.is_empty(), "a failed save never shows a claim celebration")
 	app.store.prefix = saved_prefix
 	await _escape()
 	_check(not app.collection_panel.visible and not get_tree().paused and app.phase == "celebrating", "Escape returns from collection to the held result")
