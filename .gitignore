@@ -1,0 +1,15 @@
+.tools/
+build/
+game/.godot/
+game/android/build/
+game/android/.build_version
+game/addons/
+game/export_credentials.cfg
+*.keystore
+*.jks
+*.log
+__pycache__/
+.env
+.env.*
+!.env.example
+
