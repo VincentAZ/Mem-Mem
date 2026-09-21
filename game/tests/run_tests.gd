@@ -215,14 +215,14 @@ func _test_collection() -> void:
 	p.round_state.finish_resolution()
 	_clear_round(p.round_state)
 	p.settle_collection_reward()
-	check(p.choice_tokens == 0 and p.discovery_steps == 2, "imperfect board advances discovery without granting a perfect choice")
+	check(p.choice_tokens == 0 and p.collected == [23], "imperfect board grants neither a choice nor a character")
 	p.advance()
 	_clear_round(p.round_state)
 	p.settle_collection_reward()
-	check(p.discovery_steps == 0 and p.collected.size() == 2 and p.last_discovery >= 0 and p.last_discovery != 23, "three boards discover a new nonduplicate character")
+	check(p.choice_tokens == 1 and p.collected == [23], "third board earns only a perfect choice and never auto-selects a character")
 	var snapshot: Dictionary = p.snapshot()
 	var loaded: GameProgress = GameProgress.from_snapshot(snapshot)
-	check(loaded != null and loaded.snapshot() == snapshot and not loaded.settle_collection_reward(), "discovery and earned choices persist exactly once")
+	check(loaded != null and loaded.snapshot() == snapshot and not loaded.settle_collection_reward(), "ownership and earned choices persist exactly once")
 	p.dark_mode = true
 	p.background = 3
 	p.preferred_theme = 3
@@ -251,6 +251,41 @@ func _test_collection() -> void:
 	_clear_round(loaded.round_state)
 	loaded.advance()
 	check(loaded.round_state.generation == 3, "migrated player enters new generator only after the old board")
+	# Regression: 50% accuracy at the old three-board threshold must never collect.
+	var imperfect: GameProgress = GameProgress.create(211)
+	for level: int in range(1, 7):
+		imperfect.round_state.begin_play()
+		var nonmatch: int = 1
+		while imperfect.round_state.identities[nonmatch] == imperfect.round_state.identities[0]:
+			nonmatch += 1
+		for attempt: int in range(imperfect.round_state.identities.size() / 2):
+			imperfect.round_state.select(0)
+			imperfect.round_state.select(nonmatch)
+			imperfect.round_state.finish_resolution()
+		_clear_round(imperfect.round_state)
+		imperfect.discovery_steps = 2 # Existing saves can be one board from the retired reward.
+		check(imperfect.round_state.accuracy() == 0.5, "regression fixture reaches exactly 50 percent accuracy")
+		check(imperfect.settle_collection_reward(), "50 percent completion settles once")
+		check(imperfect.choice_tokens == 0 and imperfect.collected.is_empty(), "50 percent never grants a choice or auto-collects, including every third board")
+		imperfect = GameProgress.from_snapshot(imperfect.snapshot())
+		check(imperfect != null and not imperfect.settle_collection_reward() and imperfect.collected.is_empty(), "reloading an imperfect result cannot award a character")
+		imperfect.advance()
+	_clear_round(imperfect.round_state)
+	imperfect.settle_collection_reward()
+	check(imperfect.choice_tokens == 1 and imperfect.collected.is_empty(), "100 percent offers a choice without choosing for the player")
+	imperfect.advance()
+	imperfect = GameProgress.from_snapshot(imperfect.snapshot())
+	check(imperfect.choice_tokens == 1 and imperfect.collected.is_empty(), "advancing and restarting bank an unclaimed choice without auto-selection")
+	check(imperfect.collect_character(17) and imperfect.collected == [17], "only the player's explicit selection adds their chosen character")
+	# Preserve old ownership, including surprise characters, without replaying old rewards.
+	var historical: Dictionary = imperfect.snapshot()
+	historical.discovery_steps = 2
+	historical.last_discovery = 17
+	var preserved: GameProgress = GameProgress.from_snapshot(historical)
+	check(preserved != null and preserved.collected == [17] and preserved.round_state.snapshot() == imperfect.round_state.snapshot(), "retired surprise metadata still loads without losing owned characters or the board")
+	_clear_round(preserved.round_state)
+	preserved.settle_collection_reward()
+	check(preserved.collected == [17] and preserved.choice_tokens == 1 and preserved.last_discovery == -1, "old surprise progress cannot grant another automatic character")
 	# Full collections retain perfect choices for later content without duplicate awards.
 	p.collected.clear()
 	for id: int in range(24):

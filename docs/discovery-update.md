@@ -1,3 +1,7 @@
+> Historical 0.4.0 notes: the automatic three-board surprise reward described below
+> was removed in 0.5.1. Only perfect accuracy earns a choice, and only the player
+> selects and collects a character. Existing ownership is preserved.
+
 # Discovery update — 0.4.0
 
 This iteration addresses the desktop feedback: repetitive cast, plain art, limited

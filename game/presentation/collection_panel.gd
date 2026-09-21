@@ -114,7 +114,7 @@ func _set_view(only_owned: bool) -> void:
 func refresh() -> void:
 	add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.background, 0, 0))
 	tally.text = "%02d / 24" % progress.collected.size()
-	summary.text = "%d %s saved · Next surprise in %d %s\n100%% accuracy earns your choice of any character." % [progress.choice_tokens, "choice" if progress.choice_tokens == 1 else "choices", 3 - progress.discovery_steps, "board" if progress.discovery_steps == 2 else "boards"]
+	summary.text = "%d character %s saved\n100%% accuracy earns your choice of any character." % [progress.choice_tokens, "choice" if progress.choice_tokens == 1 else "choices"]
 	if progress.collected.size() == 24:
 		summary.text = "All 24 collected! Your extra choices stay saved."
 	mine.text = "My collection · %d" % progress.collected.size()
@@ -139,7 +139,7 @@ func refresh() -> void:
 		entries.append(entry)
 	empty.visible = entries.is_empty()
 	(grid.get_parent() as ScrollContainer).visible = not entries.is_empty()
-	empty.text = "Your collection starts here.\nClear a perfect board to choose anyone,\nor finish 3 boards for a surprise." if progress.collected.is_empty() else "No collected characters in this theme yet.\nTry Discover all."
+	empty.text = "Your collection starts here.\nFinish a board with 100% accuracy,\nthen choose any character to collect." if progress.collected.is_empty() else "No collected characters in this theme yet.\nTry Discover all."
 	_update_action()
 	_sync_animation()
 

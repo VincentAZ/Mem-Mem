@@ -54,7 +54,8 @@ leaves existing saves intact and displays a save warning without blocking play.
 
 Schema 3 payloads contain the journey seed, current level, exact board, removed pairs,
 comparison count, opening status, completed-level points, preferences, collection
-ownership, saved choice tokens, discovery steps, and the last settled reward level.
+ownership, saved choice tokens, and the last settled reward level. Retired discovery
+fields remain readable solely for compatibility with earlier saves.
 Validation regenerates the board and checks pair integrity, integer ranges, and score
 bounds. Transient selections are cleared on process restart. An interrupted opening
 repeats its preview; an interrupted completion restores its result and cheering cast,
@@ -87,9 +88,11 @@ card flip to its intended face and removes active walking/point/spark effects.
 
 `GameProgress.settle_collection_reward()` handles each cleared board at most once,
 using the saved reward-level marker. Exact perfect accuracy (`attempts == matches`)
-grants one bankable choice. Every third cleared board adds one deterministic,
-uncollected surprise character, if any remain. These rewards stack. Free-choice
-claims require a valid, unowned character ID and a positive credit balance.
+grants one bankable choice. Imperfect rounds grant no collection reward. Board
+completion never picks or collects a character: only an explicit claim adds ownership,
+requiring a valid, unowned character ID and a positive credit balance. The earlier
+every-third-board surprise reward was removed in 0.5.1. Already collected characters
+and banked choices are preserved; old discovery counters cannot trigger new awards.
 
 `CollectionPanel` opens My collection from the persistent bottom navigation; result
 cards open Discover all for claiming rewards. Both views filter by theme.

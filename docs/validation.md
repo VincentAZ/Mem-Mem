@@ -1,96 +1,56 @@
-# Collection and layout update validation — 0.5.0
+# Collection reward correction — 0.5.1
 
-Validated locally on 2026-09-20. This release makes collection and appearance
-controls visible, redesigns the HUD and settings, animates owned characters, and
-extends difficulty to 16 cards. Earlier discovery results are retained in
-[validation-discovery.md](validation-discovery.md).
+The automatic every-third-board surprise reward has been removed. Only exact
+100% accuracy earns one saved choice. Completing a board never adds a character;
+the player must select one and confirm Collect. Existing collection ownership,
+saved choices, board layouts and points are preserved.
 
-## Automated rules and persistence — passed
+Retired discovery fields remain readable for compatibility with schema 2/3 saves,
+but they cannot grant ownership and no longer appear in result or collection copy.
 
-`./scripts/validate.sh`: Godot import/script checks passed; **14,035 assertions,
-zero failures**. Coverage includes deterministic boards, exact pairs, mismatch
-resolution, point/bonus bounds, saves and recovery, reward idempotency, collection
-claims, audio gating and simulated/native-adapter service behavior.
+## Validation
 
-Expanded-wave checks cover 16-card boards in every theme, eight solvable pairs and
-960 perfect-board points. Schema 1 and 2 migrations preserve partially cleared
-boards at levels 7, 8, 13 and 48, then survive another full wave of advancing,
-saving and reloading. Tests reject contradictory migration boundaries and retain
-collection, choices and appearance settings from schema 2.
+`./scripts/validate.sh`: **14,064 checks, zero failures**, including:
 
-The new schema 3 stores the first level using generator 3. The current saved board
-keeps its old generator and exact positions until it is completed. Score validation
-accounts for old-wave history and the expanded wave separately.
+- Six consecutive boards at exactly 50% accuracy never earn choices or characters,
+  even when an old save is one board away from the retired surprise threshold.
+- Perfect completion grants one choice and leaves ownership unchanged.
+- Advancing, saving and restarting preserve unclaimed choices without auto-selection.
+- Only the player's explicit valid selection adds the chosen character.
+- Old surprise metadata still loads without deleting existing characters or boards.
+- Completion/reload idempotency, scoring, save recovery, 16-card generation and
+  service simulations continue to pass.
 
-## Desktop interaction and visual checks — passed
+`xvfb-run -a ./scripts/smoke_desktop.sh`: passed. The rendered test reproduces a
+six-pair board at 50% accuracy with the retired surprise counter at its old threshold.
+It verifies zero collection awards, no misleading reward message, and saved ownership
+remaining unchanged. Perfect-choice selection, collection animations, 16-card play,
+settings, sound and lifecycle checks also passed.
 
-`xvfb-run -a ./scripts/smoke_desktop.sh` drives real pointer/keyboard events in an
-isolated save. Screenshots were inspected in light and dark modes.
+`python3 scripts/smoke_android.py --reset-test-progress`: passed on the isolated
+API 35 emulator. Real touch input made three mismatches and three matches on the
+first board (exactly 50%), then verified no character or choice after a restart.
+The second board earned a perfect choice; the test selected Maya and confirmed
+Collect. After clearing levels 1–8, the state held **4,530 banked points**, **6 saved
+choices**, and **only Maya collected**. No automatic characters appeared on the
+third or sixth boards. Collection animation, Reduce motion, appearance, offline
+restart and pause/resume passed; no Godot or Android runtime errors were recorded.
 
-- Round score is centered within one pixel; pairs and accuracy flank it in equal columns.
-- Persistent bottom buttons open My collection and Settings.
-- Empty collections and empty theme filters explain how to earn/find characters.
-- Discover all lists the catalog; selection plus Collect spends one choice exactly once.
-- Owned cards have gold surfaces, frames, corner markers and animated cheering poses.
-- Owned characters animate while gameplay behind the collection is paused; backgrounding
-  freezes them, resuming restarts them, and Reduce motion keeps them still.
-- The 0.5-second preview, mismatch reset, walking, explicit Next level, held/restored
-  results, dark mode, backgrounds and sound preferences still work.
-- All 16 cards stay in bounds with at least 88×88 viewport-unit touch targets.
-  Every pair was cleared through input, earning exactly 960 round points.
-- All 16 characters return and cheer without covering the completion card.
+Artifacts: `build/tests.log`, `build/desktop-smoke.log`,
+`build/android-collection-results.json`, `build/android-collection-runtime.log`,
+and screenshots under `build/screenshots/`. Desktop tests use isolated saves;
+Android resets only the dedicated emulator's game progress. Player desktop and
+physical-phone saves were not changed.
 
-Artifacts: `build/screenshots/smoke-*.png`, `build/desktop-smoke.log` and
-`build/smoke-layout.json`. The JSON exports actual control positions for Android
-input tests, avoiding a separate copy of the board layout.
+## APK
 
-## Android API 35 emulator — passed
+`build/mem-mem-debug.apk`: **0.5.1-choice-only**, version code **7**, about 171.3 MiB.
+Godot export, signature verification, native-plugin inclusion and 16 KB ZIP/ELF
+alignment checks passed.
 
-`python3 scripts/smoke_android.py --reset-test-progress` on the isolated
-432×900 `MemMemTest` emulator, using `swangle`. This command resets only emulator
-progress; the player's desktop save is never changed. Pillow is required for
-screenshot comparisons (`python3-pil` on Debian/Ubuntu).
+SHA-256: `ca0d6a02602d4b435e935b278bb068b0be104f754ab4e52c0668b3600cfbcb98`.
 
-- Installing over 0.4.0 preserved the old board, score, collected characters,
-  saved choices, reward marker, dark mode and background.
-- Real Android touch input cleared levels 1–8, including the 16-card peak.
-  With one intentional mismatch on level 1, level 9 began with **4,545 banked points**,
-  **6 saved choices**, and **3 collected characters** (one chosen plus two surprises).
-- Process termination during departure, restored completion, explicit advancement,
-  background/resume, pause, offline relaunch and mute/unmute passed.
-- A perfect board earned a choice; claiming it survived restart without re-awarding.
-- Dark mode and the Orbit background persisted across restart. The popup is tested
-  with a direct tap; an earlier keyboard-driven test selected Twilight instead.
-- Screenshot differences verified collection animation inside the game area;
-  Reduce motion produced identical still frames.
-- No Godot script errors, runtime errors or Android fatal exceptions appeared.
-
-After the final empty-state layout adjustment, the final APK was installed and
-checked again for launch, exact save preservation, collection animation, the empty
-Firefighters filter, and a clean runtime log. That screen was visually inspected.
-
-Artifacts: `build/android-collection-results.json`, `build/android-final-results.json`,
-`build/android-collection-runtime.log`, `build/android-final-runtime.log`, and
-`build/screenshots/android-{collection,final}-*.png`. The successful old-version
-migration check is also recorded in `.tools/layout-android-migration.log`.
-
-## APK — passed
-
-**0.5.0-collection**, version code **6**, approximately **171.3 MiB**:
-`build/mem-mem-debug.apk`.
-
-- Godot Android export and APK signature verification passed.
-- Native billing and advertising plugins remain included.
-- ZIP/native ELF 16 KB alignment checks passed for arm64-v8a and x86_64.
-- SHA-256: `88be72b25b3b49b3f1f123c341afe7e0331ddda0e204917dae1a103dee4bbc92`.
-
-## Still requires physical-device or account validation
-
-Physical-phone testing remains pending: accessory readability on the 4×4 board,
-thumb reach, animation smoothness, sustained performance, heat/battery behavior,
-vibration and speaker/headphone sound. The emulator cannot establish these.
-
-Live Play purchases/restoration, production ad-removal ownership, AdMob and UMP
-consent flows still require configured accounts and store/device tests. Simulations
-are not live validation. Real-money purchasing remains disabled. See
-[store-setup.md](store-setup.md).
+Physical-phone feedback and live store/consent/advertising account validation remain
+pending. Real-money purchasing remains disabled. See [store setup](store-setup.md).
+Earlier layout and collection validation is archived in
+[validation-collection.md](validation-collection.md).

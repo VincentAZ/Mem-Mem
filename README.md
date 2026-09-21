@@ -7,8 +7,9 @@ Firefighters, Aliens, and Golden Years. Matched characters react and leave toget
 the full cast returns to celebrate. Dark mode and four backgrounds are available.
 
 **Perfect accuracy earns one choice of any uncollected character across all themes.**
-Every three cleared boards also discovers a surprise character. Choices can be
-saved for later and persist across restarts. No purchase is required.
+Only 100% accuracy earns a choice. Characters are added only after you select one
+and press Collect; there are no automatic or random collection awards. Choices can
+be saved for later and persist across restarts. No purchase is required.
 
 ## Run it
 
@@ -74,7 +75,7 @@ behavior; live purchases need a Play-enabled device and configured store account
 - Cumulative score: 100 per pair, plus a level accuracy bonus of up to 20 per pair.
   There is no timer, life limit, or score deduction.
 - Automatic saves preserve the level, exact layout, completed pairs, attempts,
-  score, collection, earned choices, discovery progress, and preferences.
+  score, collection, earned choices, and preferences.
   Interrupted comparisons return face-down after relaunch.
 - **Settings** in the bottom navigation opens Appearance (dark mode and backgrounds),
   Sound & Motion, and the next-board cast. The top pause button, Escape and Android
@@ -153,6 +154,6 @@ Downloaded addons, SDKs, build artifacts, signing keys, and runtime saves are
 ignored by Git. Original third-party license notices remain in downloaded packages.
 See [dependency notes](docs/dependencies.md).
 
-See [discovery update notes](docs/discovery-update.md) for reward rules, migration,
-art direction, and remaining phone review; [asset credits](docs/asset-credits.md)
+See [discovery update notes](docs/discovery-update.md) for historical art and migration notes; the current reward rule is perfect accuracy
+plus an explicit player choice. [Asset credits](docs/asset-credits.md)
 records generation prompts and audio sources.

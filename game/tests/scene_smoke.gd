@@ -287,6 +287,20 @@ func run(screen: GameScreen) -> void:
 	await _click(app.settings_button.global_position + app.settings_button.size * 0.5)
 	_check(app.pause_menu.visible and get_tree().paused, "bottom Settings opens appearance and pauses play")
 	await _escape()
+	# Reproduce the reported six-pair, 50% result at the retired surprise threshold.
+	app.progress = GameProgress.create(4815)
+	app.progress.round_state = MatchRound.create(4, 4815)
+	app.progress.banked_points = LevelGenerator.completed_pairs(3) * 120
+	app.progress.discovery_steps = 2
+	_clear_model(app.progress.round_state)
+	app.progress.round_state.attempts = 12
+	await app._show_level()
+	await _wait_phase("celebrating")
+	_check(app.progress.round_state.accuracy() == 0.5 and app.progress.choice_tokens == 0 and app.progress.collected.is_empty(), "50 percent result never offers or auto-selects a collection reward")
+	_check(not app.completion_detail.text.contains("Discovered") and not app.completion_detail.text.contains("choice earned"), "imperfect result has no misleading collection award message")
+	await _capture("fifty-percent-no-reward")
+	var restored_reward: GameProgress = app.store.load_progress()
+	_check(restored_reward != null and restored_reward.collected.is_empty() and restored_reward.choice_tokens == 0, "50 percent result persists without collection ownership")
 	var layout_file: FileAccess = FileAccess.open("user://smoke-layout.json", FileAccess.WRITE)
 	layout_file.store_string(JSON.stringify(layout))
 	layout_file.close()

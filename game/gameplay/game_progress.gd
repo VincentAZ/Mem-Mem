@@ -16,6 +16,8 @@ var preferred_theme: int = -1
 var collected: Array[int] = []
 var choice_tokens: int = 0
 var reward_level: int = 0
+# Retired surprise-reward fields remain readable for existing schema 2/3 saves.
+# They no longer award ownership or appear in the UI.
 var discovery_steps: int = 0
 var last_discovery: int = -1
 
@@ -26,18 +28,7 @@ func settle_collection_reward() -> bool:
 	last_discovery = -1
 	if round_state.attempts == round_state.matches():
 		choice_tokens += 1
-	discovery_steps += 1
-	if discovery_steps == 3:
-		discovery_steps = 0
-		var remaining: Array[int] = []
-		for character: int in range(24):
-			if not collected.has(character):
-				remaining.append(character)
-		if not remaining.is_empty():
-			var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-			rng.seed = seed_value + reward_level * 9973
-			last_discovery = remaining[rng.randi_range(0, remaining.size() - 1)]
-			collected.append(last_discovery)
+	discovery_steps = 0
 	return true
 
 func collect_character(character: int) -> bool:

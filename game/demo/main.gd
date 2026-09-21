@@ -506,8 +506,6 @@ func _present_completion(play_sound: bool = false) -> void:
 	completion_detail.text = "%d pairs · %d%% accuracy\n+%d accuracy bonus" % [model.matches(), roundi(model.accuracy() * 100), model.bonus()]
 	if model.accuracy() == 1.0:
 		completion_detail.text += "\n1 character choice earned"
-	if progress.last_discovery >= 0:
-		completion_detail.text += "\nDiscovered " + PeopleCatalog.NAMES[progress.last_discovery] + "!"
 	collect_reward_button.text = "Choose a character · %d saved" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 24" % progress.collected.size()
 	_update_hud(false)
 	completion.modulate.a = 0.0
@@ -537,7 +535,7 @@ func _update_hud(animate_score: bool) -> void:
 	round_score_label.text = str(model.points())
 	difficulty_label.text = "%d CARDS" % model.identities.size()
 	collection_button.text = "Collection · %d / 24" % progress.collected.size()
-	tip_label.text = "100% accuracy → choose any character" if progress.discovery_steps == 0 else "Next collection surprise in %d %s" % [3 - progress.discovery_steps, "board" if progress.discovery_steps == 2 else "boards"]
+	tip_label.text = "100% accuracy → choose any character"
 	accuracy_label.text = "%d%%" % roundi(model.accuracy() * 100) if model.attempts > 0 else "—"
 	progress_bar.max_value = model.identities.size() / 2
 	progress_bar.value = model.matches()
