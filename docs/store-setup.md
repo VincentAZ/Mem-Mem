@@ -64,3 +64,30 @@ References: [Godot billing integration](https://godot-sdk-integrations.github.io
 [Google purchase security](https://developer.android.com/google/play/billing/security),
 [AdMob test ads](https://developers.google.com/admob/android/test-ads),
 [AdMob privacy](https://developers.google.com/admob/android/privacy).
+
+## Mem-Mem Plus (0.6.0 test implementation)
+
+Use the permanent non-consumable product ID **`remove_ads`**, display name
+**Mem-Mem Plus**. The bundle grants all three new themes (Woodland Crew, Snack Squad,
+Mythical Misfits), their eligibility for perfect-round collectible claims, complete
+ad removal, and one offline Quick Peek per board. It does not auto-collect characters.
+The original four themes remain free. No promise covers every future theme pack.
+
+Planned US launch price: **$1.99 once**. Intended later price: **$3.99**, subject to
+review and a deliberate Play Console change. Prior buyers retain the bundle. Never
+show $3.99 as a previously charged price before it has actually been offered.
+The production screen must use Play's localized product price, not a hardcoded USD
+conversion. Current screens explicitly show simulated introductory pricing.
+
+The Android debug build uses Google's rewarded demo unit supplied by AdmobPlugin.
+Create a production rewarded unit when the AdMob account exists. A completed reward
+unlocks one peek for that board; mere dismissal does not. Configure UMP messages and
+use its request-permission result before enabling any production ad request.
+The development Allow & watch button permits test traffic only and must be replaced
+by the production consent flow. Add privacy options where required by UMP.
+
+Before enabling real purchases: implement verified purchase processing and
+acknowledgement, handle revocation/refunds, retrieve localized product details,
+and validate purchase, pending resolution, restoration and offline entitlements
+with Play license testers. Native charges remain unconditionally disabled in this
+release. Fake ownership files are never evidence of a real store purchase.

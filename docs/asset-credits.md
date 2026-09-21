@@ -2,21 +2,24 @@
 
 ## Character artwork
 
-The eight PNG atlases in `game/assets/characters/` were generated for Mem-Mem using
+The sixteen PNG atlases in `game/assets/characters/` were generated for Mem-Mem using
 the built-in `image_gen` tool and the imagegen skill. No user API key or CLI fallback
 was used. The original output files were copied unchanged, retaining their alpha.
 They are baked images; the game performs no inference and does not call a service.
 
-Each theme has six full-body neutral figures and corresponding delighted/cheering
-figures. Atlas regions are recorded in `game/presentation/atlas_regions.gd`.
-Portraits crop the shared art; accessory details are drawn deterministically by
-`CharacterAccessory`. Named variants are fictional game characters.
+Each of the seven themes now has eight full-body neutral figures and corresponding
+delighted/cheering figures. The original four sheets retain six each; the cast-expansion
+sheet adds two per original theme. Atlas regions are recorded in `game/presentation/atlas_regions.gd`.
+Portraits crop the shared art. Matching accessory overlays were removed in 0.6.0.
+New atlas bounds are measured without editing the PNGs by
+`scripts/measure_character_atlases.py`; results are in `ExpandedAtlas`. Named variants are fictional game characters.
 
 Full prompt set, reference-image provenance, and saved source paths:
 [`character-art-prompts.json`](character-art-prompts.json).
 
 Runtime assets: `people.png`, `firefighters.png`, `aliens.png`, `golden.png`, and each
-corresponding `-cheer.png`, all under `game/assets/characters/`. Previous original
+corresponding `-cheer.png`, plus `cast-expansion`, `woodland`, `snacks`, and `mythical`
+with both pose files, all under `game/assets/characters/`. Previous original
 vector artwork remains under `game/assets/people/` as an unshipped archive.
 
 ## Crowd recordings

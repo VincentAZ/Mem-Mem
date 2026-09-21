@@ -1,15 +1,28 @@
 # Mem-Mem — matching game
 
 A Godot 4.7.2 / GDScript Android portrait-matching game.
-The collection update adds a redesigned HUD, animated owned characters and levels
-up to 16 cards. There are 24 collectable characters across Everyday People,
-Firefighters, Aliens, and Golden Years. Matched characters react and leave together;
-the full cast returns to celebrate. Dark mode and four backgrounds are available.
+Version **0.6.0 — Quick Peek** has 56 collectible characters across seven themes,
+with distinct matching pairs and a 4–16-card difficulty rhythm. Hard boards lead
+immediately to four-card boards. The held completion, collection reactions, dark
+mode and four backgrounds remain part of the game.
 
-**Perfect accuracy earns one choice of any uncollected character across all themes.**
-Only 100% accuracy earns a choice. Characters are added only after you select one
-and press Collect; there are no automatic or random collection awards. Choices can
-be saved for later and persist across restarts. No purchase is required.
+**100% accuracy earns one bankable choice from unlocked themes.** Select a character
+and press Collect; there are no automatic or random collection awards. Quick Peek
+preserves accuracy and perfect-round eligibility.
+
+**Quick Peek** reveals the remaining cards for 0.5 seconds, once per board. Free
+players explicitly watch a rewarded test ad, then tap Ready when they want their
+peek. **Settings → Mem-Mem Plus** opens the **$1.99 one-time introductory bundle**:
+no ads, a peek on each board, and Woodland Crew, Snack Squad and Mythical Misfits.
+The original four themes, now eight characters each, stay free. Plus unlocks paid
+characters to earn, not automatic collection ownership.
+
+**This is a development build.** Purchases and restoration are labeled simulations;
+no money is charged. Android uses Google's rewarded test ads; desktop has an
+explicit simulated Earn reward button. Settings can select simulated rewarded ads
+on Android for offline testing. Real purchases and production consent/ads remain
+pending store setup. The intended later price is $3.99; there is no automatic price
+change or fictitious crossed-out price.
 
 ## Run it
 
@@ -69,16 +82,15 @@ behavior; live purchases need a Play-enabled device and configured store account
 
 ## What's included
 
-- A repeating 6, 8, 8, 12, 8, 6, 12, 16, 8, 12, 16, 8-card difficulty wave.
-  New journeys first reach a 4×4 board at level 8; level 11 adds more lookalike pairs. After clearing a board,
-  every character returns and cheers around the result card. **Next level** continues
-  only when you choose; results also remain after restarting the app.
-- A longer audible shuffle, then a **0.5-second preview of the actual final positions**,
-  then cards turn down. Positions stay fixed for the whole board, so memory can earn perfection.
-- Four themes, six collectable characters each, and two comparison variants per
-  character: 48 matching identities. Glasses, scarf patterns, brooches, insignia,
-  ties, and hair ornaments provide more varied lookalike details. Themes rotate;
-  every fifth board mixes the cast. Settings can pin a theme for subsequent boards.
+- A repeating **4, 6, 8, 6, 12, 4, 8, 6, 16, 4, 8, 6-card** sequence.
+  After clearing a board, the cast celebrates around a held result. **Next level**
+  continues only when selected, including after restarting the app.
+- An audible shuffle, then a **0.5-second preview of the final positions**.
+  Positions stay fixed. Quick Peek gives one additional half-second look, never
+  auto-revealing when an ad closes and never changing attempts or accuracy.
+- Seven themes, eight characters each. Each visible character is one exact matching
+  pair; there are no accessory variants. Unlocked themes rotate, with a mixed cast
+  every fifth level. Settings can pin an unlocked theme for subsequent boards.
 - Mismatches flip **both** portraits back. Matches trigger delighted expressions,
   +100 feedback, and varied left/right/split departures. Return routes and cheer
   movement vary, accompanied by one of three crowd effects.
@@ -95,8 +107,8 @@ behavior; live purchases need a Play-enabled device and configured store account
 - Rule, persistence, service, and rendered interaction tests.
 
 Character art uses generated, transparent PNG atlases with normal adult proportions.
-Portraits and animated cutouts reuse the same characters. Deterministic accessory
-overlays keep comparison variants identical except for their intended detail.
+Portraits and animated cutouts reuse the same unmodified characters. Animals and
+food use their full silhouettes and hop/float motion instead of sliced human legs.
 Matched portraits switch to delighted expressions before departing. These are 2D
 cutout animations with baked dimensional art, not a Blender model or full 3D rig.
 
@@ -118,9 +130,10 @@ variations derived from two CC0 recordings. **Settings → Sound effects** saves
 choice. Backgrounding stops sounds; restoring a completed result stays silent.
 See [asset provenance](docs/asset-credits.md) for art prompts and sound sources.
 
-Older saves retain their exact board and score. After that board, the new generator
-uses the expanded difficulty wave. Saved scores retain the correct bounds for both
-the old and new progression. There is no runtime AI model, live image generation,
+Older saves retain pair positions, progress, collection and score. Duplicate legacy
+variants become distinct unused characters in the same theme. After that board, the
+easier sequence begins with four cards. Historical score validation keeps the
+correct generation boundaries. There is no runtime AI model, live image generation,
 analytics, or production purchase backend. Real-money purchasing stays disabled.
 
 ## Test
@@ -145,7 +158,9 @@ screenshots to `build/screenshots/`. It uses separate test saves and fake owners
 so your journey is untouched. Completion checks cover the full returning cast,
 held results, explicit Next level input, still cheering poses with reduced motion,
 centered round score, 16-card touch targets, owned collection animation, sound
-gating, and saved preferences. Automated service tests also use a separate fake store.
+gating, and saved preferences. Automated service tests also use a separate fake store. The smoke suite additionally
+checks rewarded-ad failure/cancellation/earning, one-use peek timing, paid theme
+restrictions, simulated Plus purchasing, and all three new themes at 16-card size.
 
 Game saves live under Godot's user data directory (isolated desktop setup:
 `.tools/xdg-data/mem-mem-foundation/progress.0.json` and `progress.1.json`).

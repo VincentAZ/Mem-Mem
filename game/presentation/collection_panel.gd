@@ -1,5 +1,6 @@
 class_name CollectionPanel
 extends PanelContainer
+signal upgrade_requested
 signal closed
 signal character_chosen(character: int)
 var progress: GameProgress
@@ -48,7 +49,7 @@ func _ready() -> void:
 	var title: Label = GameStyle.label("The collection", 28)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	heading.add_child(title)
-	tally = GameStyle.label("0 / 24", 21)
+	tally = GameStyle.label("0 / 56", 21)
 	heading.add_child(tally)
 	summary = GameStyle.label("", 13, true)
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -69,7 +70,7 @@ func _ready() -> void:
 	filters = OptionButton.new()
 	filters.custom_minimum_size.y = 44
 	filters.add_item("All themes", -1)
-	for i: int in range(4):
+	for i: int in range(PeopleCatalog.THEMES.size()):
 		filters.add_item(PeopleCatalog.THEMES[i], i)
 	filters.item_selected.connect(func(index: int) -> void:
 		filter_theme = index - 1
@@ -128,10 +129,10 @@ func refresh() -> void:
 	fireworks.clear()
 	audio.stop_all()
 	add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.background, 0, 0))
-	tally.text = "%02d / 24" % progress.collected.size()
-	summary.text = "%d character %s saved\n100%% accuracy earns your choice of any character." % [progress.choice_tokens, "choice" if progress.choice_tokens == 1 else "choices"]
-	if progress.collected.size() == 24:
-		summary.text = "All 24 collected! Your extra choices stay saved."
+	tally.text = "%02d / %d" % [progress.collected.size(), PeopleCatalog.COUNT]
+	summary.text = "%d character %s saved\n100%% accuracy earns your choice from unlocked themes." % [progress.choice_tokens, "choice" if progress.choice_tokens == 1 else "choices"]
+	if progress.collected.size() == PeopleCatalog.COUNT:
+		summary.text = "All 56 collected! Your extra choices stay saved."
 	mine.text = "My collection · %d" % progress.collected.size()
 	GameStyle.skin_button(mine, owned_only)
 	GameStyle.skin_button(discover, not owned_only)
@@ -140,12 +141,13 @@ func refresh() -> void:
 	for child: Node in grid.get_children():
 		child.free()
 	entries.clear()
-	for character: int in range(24):
-		if (filter_theme >= 0 and character / 6 != filter_theme) or (owned_only and not progress.collected.has(character)):
+	for character: int in range(PeopleCatalog.COUNT):
+		if (filter_theme >= 0 and PeopleCatalog.theme_of(character) != filter_theme) or (owned_only and not progress.collected.has(character)):
 			continue
 		var entry: CollectionCard = CollectionCard.new()
 		entry.character = character
 		entry.owned = progress.collected.has(character)
+		entry.locked = not PeopleCatalog.is_unlocked(character, progress.plus_enabled)
 		entry.selected = character == selected
 		entry.reduced_motion = progress.reduced_motion
 		entry.tooltip_text = "%s · %s" % [PeopleCatalog.NAMES[character], "Collected" if entry.owned else "Not collected"]
@@ -154,12 +156,15 @@ func refresh() -> void:
 		entries.append(entry)
 	empty.visible = entries.is_empty()
 	(grid.get_parent() as ScrollContainer).visible = not entries.is_empty()
-	empty.text = "Your collection starts here.\nFinish a board with 100% accuracy,\nthen choose any character to collect." if progress.collected.is_empty() else "No collected characters in this theme yet.\nTry Discover all."
+	empty.text = "Your collection starts here.\nFinish a board with 100% accuracy,\nthen choose a character from an unlocked theme." if progress.collected.is_empty() else "No collected characters in this theme yet.\nTry Discover all."
 	_update_action()
 	_sync_animation()
 
 func _pick(character: int) -> void:
 	if not visible or not animation_allowed:
+		return
+	if not PeopleCatalog.is_unlocked(character, progress.plus_enabled) and not progress.collected.has(character):
+		upgrade_requested.emit()
 		return
 	selected = character
 	var picked: CollectionCard
@@ -172,7 +177,7 @@ func _pick(character: int) -> void:
 		return
 	if picked.owned:
 		var options: Array[int] = [0, 1, 2]
-		if character % 3 != 2:
+		if PeopleCatalog.can_wave(character):
 			options.append_array([3, 4])
 		options.erase(int(last_reactions.get(character, -1)))
 		var kind: int = options[randi_range(0, options.size() - 1)]
@@ -200,7 +205,7 @@ func celebrate_claim(character: int) -> void:
 			return
 
 func _update_action() -> void:
-	action.disabled = selected < 0 or progress.choice_tokens <= 0 or progress.collected.has(selected)
+	action.disabled = selected < 0 or progress.choice_tokens <= 0 or progress.collected.has(selected) or not PeopleCatalog.is_unlocked(selected, progress.plus_enabled)
 	action.visible = not owned_only
 	if selected < 0:
 		action.text = "Choose a character above" if progress.choice_tokens > 0 else "Perfect a board to earn a choice"

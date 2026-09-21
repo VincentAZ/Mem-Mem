@@ -33,3 +33,28 @@ func dismiss() -> void:
 	if state == "showing":
 		_report("dismissed", "SIMULATED: ad dismissed. Play can continue.")
 
+
+func load_rewarded(board_key: String) -> void:
+	if not _begin_rewarded(board_key):
+		return
+	var ticket: String = reward_request
+	var failure: bool = fail_load
+	_reward_report("loading", "SIMULATED: loading a rewarded test ad.")
+	await get_tree().create_timer(0.15).timeout
+	if ticket != reward_request or not can_request():
+		return
+	_reward_report("failure" if failure else "ready", "SIMULATED: ad unavailable." if failure else "SIMULATED: rewarded ad ready.")
+
+func show_rewarded() -> void:
+	if not can_request() or rewarded_state != "ready":
+		_reward_report("not_ready", "SIMULATED: rewarded ad is not ready.")
+		return
+	_reward_report("failure" if fail_show else "showing", "SIMULATED: display failed." if fail_show else "SIMULATED: reward requires the explicit Earn reward action.")
+
+func earn_test_reward() -> void:
+	# Explicit simulation of the SDK callback, never a timer or dismissal reward.
+	_deliver_reward(reward_request)
+
+func dismiss_rewarded() -> void:
+	if rewarded_state == "showing":
+		_reward_report("dismissed", "SIMULATED: rewarded ad dismissed.")

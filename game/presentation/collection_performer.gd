@@ -26,8 +26,8 @@ func _draw() -> void:
 	if reaction < 0 or reduced_motion:
 		super._draw()
 		return
-	var source: Rect2 = AtlasRegions.CHEER[PeopleCatalog.family(variant)]
-	var height: float = minf(112.0, 61.0 * source.size.y / source.size.x)
+	var source: Rect2 = PeopleCatalog.body_region(variant, true)
+	var height: float = minf(112.0, (61.0 if PeopleCatalog.motion_profile(variant) == "walk" else 84.0) * source.size.y / source.size.x)
 	var width: float = height * source.size.x / source.size.y
 	var t: float = reaction_age
 	var envelope: float = smoothstep(0.0, 0.16, t) * (1.0 - smoothstep(DURATION - 0.3, DURATION, t))
@@ -56,7 +56,9 @@ func _draw() -> void:
 	var body: Transform2D = Transform2D(tilt, stretch, 0.0, Vector2(x, 100 + hop))
 	draw_set_transform_matrix(body)
 	var texture: Texture2D = PeopleCatalog.atlas(variant, true)
-	if reaction < 3:
+	if PeopleCatalog.motion_profile(variant) != "walk":
+		draw_texture_rect_region(texture, Rect2(-width / 2, -height, width, height), source)
+	elif reaction < 3:
 		# Keep the torso intact; pivot the lower leg strips at their hidden hip seam.
 		var leg_height: float = height * 0.40
 		for leg: int in range(2):
@@ -84,10 +86,4 @@ func _draw() -> void:
 			var corner: Vector2 = Vector2(-width / 2 if arm == 0 else width * 0.22, -height)
 			var region: Rect2 = Rect2(source.position + Vector2(0 if arm == 0 else source.size.x * 0.72, 0), Vector2(source.size.x * 0.28, source.size.y * 0.40))
 			draw_texture_rect_region(texture, Rect2(corner - pivot, Vector2(arm_width, arm_height)), region)
-	# Details remain attached to the same torso throughout the performance.
-	var crop: Rect2 = PeopleCatalog.portrait_region(variant, true)
-	var factor: float = height / source.size.y
-	var origin: Vector2 = Vector2((crop.position.x - source.position.x - source.size.x / 2) * factor, -height)
-	draw_set_transform_matrix(body * Transform2D(0.0, Vector2.ONE * factor * 224.0 / 166.0, 0.0, origin))
-	CharacterAccessory.draw_on(self, variant)
 	draw_set_transform(Vector2.ZERO)

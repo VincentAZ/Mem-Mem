@@ -5,7 +5,7 @@ func _initialize() -> void:
 
 func _render() -> void:
 	var theme_id: int = int(OS.get_cmdline_user_args()[0]) if not OS.get_cmdline_user_args().is_empty() else 0
-	theme_id = clampi(theme_id, 0, 3)
+	theme_id = clampi(theme_id, 0, PeopleCatalog.THEMES.size() - 1)
 	var viewport: SubViewport = SubViewport.new()
 	viewport.size = Vector2i(1040, 650)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -20,21 +20,24 @@ func _render() -> void:
 	title.add_theme_color_override("font_color", Color("244c43"))
 	title.position = Vector2(28, 18)
 	viewport.add_child(title)
-	for family: int in range(6):
-		var origin: Vector2 = Vector2(28 + (family % 3) * 340, 78 + (family / 3) * 282)
-		for accessory: int in range(2):
-			var tile: PortraitTile = PortraitTile.new()
-			tile.variant = theme_id * 12 + family * 2 + accessory
-			tile.size = Vector2(148, 174)
-			tile.position = origin + Vector2(accessory * 154, 0)
-			viewport.add_child(tile)
-			var person: Walker = Walker.new()
-			person.variant = tile.variant
-			person.reduced_motion = true
-			person.cheering = true
-			person.scale = Vector2.ONE * 0.65
-			person.position = tile.position + Vector2(74, 199)
-			viewport.add_child(person)
+	var cast: Array[int] = PeopleCatalog.characters(theme_id)
+	for index: int in range(cast.size()):
+		var origin: Vector2 = Vector2(28 + (index % 4) * 252, 78 + (index / 4) * 282)
+		var tile: PortraitTile = PortraitTile.new()
+		tile.variant = cast[index]
+		tile.size = Vector2(144, 174)
+		tile.position = origin
+		viewport.add_child(tile)
+		var person: Walker = Walker.new()
+		person.variant = tile.variant
+		person.reduced_motion = true
+		person.cheering = true
+		person.scale = Vector2.ONE * 0.85
+		person.position = origin + Vector2(194, 62)
+		viewport.add_child(person)
+		var caption: Label = GameStyle.label(PeopleCatalog.NAMES[cast[index]], 17)
+		caption.position = origin + Vector2(5, 188)
+		viewport.add_child(caption)
 	await process_frame
 	await RenderingServer.frame_post_draw
 	var path: String = ProjectSettings.globalize_path("res://../build/screenshots/character-pack-%d.png" % theme_id)

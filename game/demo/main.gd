@@ -66,12 +66,19 @@ var settings_button: Button
 var pause_button: Button
 var difficulty_label: Label
 var round_score_panel: PanelContainer
+var peek_button: Button
+var peek_offer: PeekOffer
+var upgrade_panel: UpgradePanel
+var test_reward_button: Button
+var use_native_rewarded: bool = OS.get_name() == "Android"
+var native_reward_showing: bool = false
+var peek_started_usec: int = 0
 var themed_panels: Array[PanelContainer] = []
 
 func _ready() -> void:
 	get_tree().auto_accept_quit = false
 	get_tree().quit_on_go_back = false
-	smoke_mode = OS.get_cmdline_user_args().has("--smoke")
+	smoke_mode = OS.get_cmdline_user_args().has("--smoke") or OS.get_cmdline_user_args().has("--smoke-plus")
 	if smoke_mode:
 		store.prefix = "user://smoke_progress"
 		billing.save_path = "user://smoke_ownership.json"
@@ -98,6 +105,8 @@ func _ready() -> void:
 	add_child(collection_panel)
 	collection_panel.closed.connect(_close_collection)
 	collection_panel.character_chosen.connect(_collect_character)
+	collection_panel.upgrade_requested.connect(_open_upgrade)
+	_build_monetization()
 	_apply_palette()
 	_connect_services()
 	resized.connect(_layout_tiles)
@@ -111,7 +120,7 @@ func _ready() -> void:
 	if smoke_mode:
 		var smoke: Node = load("res://tests/scene_smoke.gd").new() as Node
 		add_child(smoke)
-		smoke.call_deferred("run", self)
+		smoke.call_deferred("run_plus_only" if OS.get_cmdline_user_args().has("--smoke-plus") else "run", self)
 
 func _build_theme() -> void:
 	var design: Theme = Theme.new()
@@ -193,7 +202,7 @@ func _build_game() -> void:
 	progress_bar.show_percentage = false
 	stats_stack.add_child(progress_bar)
 	board = Control.new()
-	board.custom_minimum_size.y = 360
+	board.custom_minimum_size.y = 320
 	board.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(board)
 	board.resized.connect(_layout_tiles)
@@ -201,6 +210,10 @@ func _build_game() -> void:
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label.custom_minimum_size.y = 26
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	peek_button = _button("Quick Peek", _quick_peek)
+	peek_button.custom_minimum_size.y = 44
+	peek_button.add_theme_font_size_override("font_size", 14)
+	column.add_child(peek_button)
 	column.add_child(status_label)
 	tip_label = GameStyle.label("", 11, true)
 	tip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -208,7 +221,7 @@ func _build_game() -> void:
 	var navigation: HBoxContainer = HBoxContainer.new()
 	navigation.add_theme_constant_override("separation", 10)
 	column.add_child(navigation)
-	collection_button = _button("Collection · 0 / 24", _open_collection)
+	collection_button = _button("Collection · 0 / 56", _open_collection)
 	collection_button.custom_minimum_size.y = 54
 	collection_button.add_theme_font_size_override("font_size", 14)
 	navigation.add_child(collection_button)
@@ -283,7 +296,10 @@ func _stat(row: HBoxContainer, caption: String, font_size: int, featured: bool =
 	return value
 
 func _show_level() -> void:
+	phase = "opening"
 	epoch += 1
+	ads.cancel_rewarded()
+	native_ads.cancel_rewarded()
 	var ticket: int = epoch
 	opening_animating = false
 	completion.hide()
@@ -297,7 +313,7 @@ func _show_level() -> void:
 	var model: MatchRound = progress.round_state
 	for index: int in range(model.identities.size()):
 		var tile: PortraitTile = PortraitTile.new()
-		tile.variant = model.identities[index]
+		tile.variant = model.character_at(index)
 		tile.face_up = false
 		tile.reduced_motion = progress.reduced_motion
 		tile.tooltip_text = "Reveal portrait %d" % (index + 1)
@@ -317,6 +333,7 @@ func _show_level() -> void:
 		_opening_sequence(ticket)
 	else:
 		phase = "playing"
+		_refresh_peek()
 		status_label.text = "Pick up where you left off."
 
 func _opening_sequence(ticket: int) -> void:
@@ -369,16 +386,17 @@ func _opening_sequence(ticket: int) -> void:
 		return
 	progress.round_state.begin_play()
 	phase = "playing"
+	_refresh_peek()
 	status_label.text = "Tap two portraits to find a pair."
 	_checkpoint()
 
 func _tile_size() -> Vector2:
-	var columns: int = LevelGenerator.columns(progress.round_state.level, progress.round_state.generation)
+	var columns: int = LevelGenerator.columns(progress.round_state.level, progress.round_state.generation, progress.round_state.wave_start)
 	var rows: int = ceili(float(progress.round_state.identities.size()) / columns)
 	return Vector2((board.size.x - 10 * (columns - 1)) / columns, (board.size.y - 10 * (rows - 1)) / rows).floor()
 
 func _tile_position(index: int) -> Vector2:
-	var columns: int = LevelGenerator.columns(progress.round_state.level, progress.round_state.generation)
+	var columns: int = LevelGenerator.columns(progress.round_state.level, progress.round_state.generation, progress.round_state.wave_start)
 	var cell: Vector2 = _tile_size() + Vector2(10, 10)
 	return Vector2((index % columns) * cell.x, (index / columns) * cell.y)
 
@@ -506,13 +524,13 @@ func _present_completion(play_sound: bool = false) -> void:
 	completion_detail.text = "%d pairs · %d%% accuracy\n+%d accuracy bonus" % [model.matches(), roundi(model.accuracy() * 100), model.bonus()]
 	if model.accuracy() == 1.0:
 		completion_detail.text += "\n1 character choice earned"
-	collect_reward_button.text = "Choose a character · %d saved" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 24" % progress.collected.size()
+	collect_reward_button.text = "Choose a character · %d saved" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 56" % progress.collected.size()
 	_update_hud(false)
 	completion.modulate.a = 0.0
 	completion.show()
 	_layout_tiles()
 	create_tween().tween_property(completion, "modulate:a", 1.0, 0.18)
-	cheer_lineup.start(model.identities, board.size, completion.get_rect(), progress.reduced_motion)
+	cheer_lineup.start(model.character_layout(), board.size, completion.get_rect(), progress.reduced_motion)
 	next_level_button.disabled = false
 	status_label.text = "Level %d complete." % model.level
 
@@ -530,12 +548,12 @@ func _next_level() -> void:
 func _update_hud(animate_score: bool) -> void:
 	var model: MatchRound = progress.round_state
 	level_label.text = "LEVEL %d" % model.level
-	mood_label.text = PeopleCatalog.theme_name(LevelGenerator.theme_for(model.level, model.chosen_theme)) if model.generation >= 2 else "Everyday People"
+	mood_label.text = PeopleCatalog.theme_name(LevelGenerator.theme_for_pool(model.level, model.chosen_theme, model.theme_pool)) if model.generation >= 4 else PeopleCatalog.theme_name(LevelGenerator.theme_for(model.level, model.chosen_theme)) if model.generation >= 2 else "Everyday People"
 	pairs_label.text = "%d / %d" % [model.matches(), model.identities.size() / 2]
 	round_score_label.text = str(model.points())
 	difficulty_label.text = "%d CARDS" % model.identities.size()
-	collection_button.text = "Collection · %d / 24" % progress.collected.size()
-	tip_label.text = "100% accuracy → choose any character"
+	collection_button.text = "Collection · %d / 56" % progress.collected.size()
+	tip_label.text = "100% accuracy → choose a character"
 	accuracy_label.text = "%d%%" % roundi(model.accuracy() * 100) if model.attempts > 0 else "—"
 	progress_bar.max_value = model.identities.size() / 2
 	progress_bar.value = model.matches()
@@ -652,17 +670,32 @@ func _build_pause() -> void:
 	theme_choice.custom_minimum_size.y = 46
 	theme_choice.add_item("Surprise me · rotating themes")
 	for name: String in PeopleCatalog.THEMES:
-		theme_choice.add_item(name)
+		theme_choice.add_item(name + (" · Plus" if PeopleCatalog.THEMES.find(name) >= 4 else ""))
 	theme_choice.select(progress.preferred_theme + 1)
 	theme_choice.item_selected.connect(func(index: int) -> void:
+		if not billing.unlocked_themes().has(index - 1) and index > 0:
+			theme_choice.select(progress.preferred_theme + 1)
+			_open_upgrade()
+			return
 		progress.preferred_theme = index - 1
 		_checkpoint()
 	)
 	cast.add_child(theme_choice)
-	var rules: Label = GameStyle.label("100 points per pair + an accuracy bonus.\n100% accuracy earns a character of your choice.", 12, true)
+	var rules: Label = GameStyle.label("100 points per pair + an accuracy bonus.\n100% accuracy earns a choice from unlocked themes.", 12, true)
 	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(rules)
 	column.add_child(_button("Your collection", _open_collection))
+	column.add_child(_button("Mem-Mem Plus · themes & peeks", _open_upgrade))
+	column.add_child(_button("Restore purchase · test", billing.restore))
+	var rewarded_mode: CheckButton = CheckButton.new()
+	rewarded_mode.text = "Use simulated rewarded ads (testing)"
+	rewarded_mode.button_pressed = not use_native_rewarded
+	rewarded_mode.toggled.connect(func(value: bool) -> void:
+		ads.cancel_rewarded()
+		native_ads.cancel_rewarded()
+		use_native_rewarded = not value and OS.get_name() == "Android"
+	)
+	column.add_child(rewarded_mode)
 	var development: Button = _button("Development service lab", _open_lab)
 	development.add_theme_font_size_override("font_size", 12)
 	column.add_child(development)
@@ -686,12 +719,18 @@ func _pause() -> void:
 	_sync_pause()
 
 func _resume() -> void:
+	if upgrade_panel.visible:
+		_close_upgrade()
+		return
+	if peek_offer.visible and not ad_overlay.visible:
+		_close_peek_offer()
+		return
 	# Escape belongs to the topmost visible overlay, never an obscured resume button.
 	if collection_panel.visible:
 		_close_collection()
 		return
 	if ad_overlay.visible:
-		ads.dismiss()
+		_dismiss_simulated_ad()
 		return
 	if lab.visible:
 		_close_lab()
@@ -709,15 +748,16 @@ func _close_lab() -> void:
 	_sync_pause()
 
 func _sync_pause() -> void:
-	get_tree().paused = backgrounded or user_paused or (lab != null and lab.visible) or (ad_overlay != null and ad_overlay.visible) or (collection_panel != null and collection_panel.visible)
+	get_tree().paused = backgrounded or user_paused or (lab != null and lab.visible) or (ad_overlay != null and ad_overlay.visible) or (collection_panel != null and collection_panel.visible) or (peek_offer != null and peek_offer.visible) or (upgrade_panel != null and upgrade_panel.visible) or native_reward_showing
 	audio.suspended = get_tree().paused
+	board.visible = not backgrounded
 	if collection_panel != null:
-		collection_panel.set_animation_active(not backgrounded)
+		collection_panel.set_animation_active(not backgrounded and not upgrade_panel.visible)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		if collection_panel.visible:
-			_close_collection()
+		if get_tree().paused:
+			_resume()
 		else:
 			_pause()
 		get_viewport().set_input_as_handled()
@@ -733,13 +773,7 @@ func _notification(what: int) -> void:
 		backgrounded = false
 		_sync_pause()
 	elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
-		if collection_panel.visible:
-			_close_collection()
-		elif ad_overlay.visible:
-			ads.dismiss()
-		elif lab.visible:
-			_close_lab()
-		elif user_paused:
+		if get_tree().paused:
 			_resume()
 		else:
 			_pause()
@@ -754,9 +788,12 @@ func _centered_label(value: String, font_size: int) -> Label:
 
 func _connect_services() -> void:
 	for service: Node in [billing, ads, consent, native_billing, bridge, native_ads, native_consent]:
+		service.process_mode = Node.PROCESS_MODE_ALWAYS
 		add_child(service)
 	native_ads.bridge = bridge
 	native_consent.bridge = bridge
+	billing.entitlement_changed.connect(_plus_changed)
+	billing.state_changed.connect(func(_state: String, _detail: String) -> void: upgrade_panel.refresh(billing))
 	billing.entitlement_changed.connect(ads.set_ad_free)
 	billing.entitlement_changed.connect(native_ads.set_ad_free)
 	consent.permission_changed.connect(ads.set_consent_allowed)
@@ -764,6 +801,9 @@ func _connect_services() -> void:
 	for service: Node in [billing, ads, consent, native_billing, native_ads, native_consent]:
 		service.connect("state_changed", _service_event)
 	ads.state_changed.connect(_simulated_ad_event)
+	for provider: AdsService in [ads, native_ads]:
+		provider.reward_earned.connect(_peek_reward_earned)
+		provider.rewarded_state_changed.connect(_rewarded_event.bind(provider))
 	billing.restore()
 	consent.request_update()
 
@@ -775,7 +815,8 @@ func _service_event(state: String, detail: String) -> void:
 	lab_state.text = "Fake ownership: %s  |  Fake ad: %s\nNative billing: %s  |  Native ad: %s" % ["ad-free" if billing.ad_free else "none", ads.state, native_billing.state, native_ads.state]
 
 func _simulated_ad_event(state: String, _detail: String) -> void:
-	ad_overlay.visible = state == "showing"
+	ad_overlay.visible = state == "showing" or ads.rewarded_state == "showing"
+	test_reward_button.visible = ads.rewarded_state == "showing"
 	_sync_pause()
 
 func _build_lab() -> void:
@@ -871,12 +912,15 @@ func _build_ad_overlay() -> void:
 	content.add_theme_constant_override("separation", 24)
 	center.add_child(content)
 	var heading: Label = _label("SIMULATED AD", 27)
-	heading.add_theme_color_override("font_color", Color.WHITE)
 	content.add_child(heading)
 	var message: Label = _label("No network request. No money involved.", 14)
-	message.add_theme_color_override("font_color", Color.WHITE)
 	content.add_child(message)
-	content.add_child(_button("Dismiss test ad", ads.dismiss))
+	test_reward_button = _button("Earn test reward & return", func() -> void:
+		ads.earn_test_reward()
+		ads.dismiss_rewarded()
+	)
+	content.add_child(test_reward_button)
+	content.add_child(_button("Close without reward", _dismiss_simulated_ad))
 	ad_overlay.hide()
 
 func _simulate_purchase(outcome: String) -> void:
@@ -919,11 +963,14 @@ func _open_collection(choosing: bool = false) -> void:
 	_sync_pause()
 
 func _close_collection() -> void:
+	if upgrade_panel.visible:
+		_close_upgrade()
+		return
 	collection_panel.hide()
 	_sync_pause()
 	_update_hud(false)
 	if phase == "celebrating":
-		collect_reward_button.text = "Choose a character · %d saved" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 24" % progress.collected.size()
+		collect_reward_button.text = "Choose a character · %d saved" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 56" % progress.collected.size()
 
 func _collect_character(character: int) -> void:
 	var before: Dictionary = progress.snapshot()
@@ -938,7 +985,7 @@ func _collect_character(character: int) -> void:
 		return
 	collection_panel.refresh()
 	collection_panel.celebrate_claim(character)
-	collection_panel.summary.text = "%s collected! %d / 24 in your collection.\n%d choices saved." % [PeopleCatalog.NAMES[character], progress.collected.size(), progress.choice_tokens]
+	collection_panel.summary.text = "%s collected! %d / 56 in your collection.\n%d choices saved." % [PeopleCatalog.NAMES[character], progress.collected.size(), progress.choice_tokens]
 	_update_hud(false)
 
 func _apply_palette() -> void:
@@ -979,3 +1026,158 @@ func _recolor(node: Node, old_ink: Color, old_muted: Color) -> void:
 			label.add_theme_color_override("font_color", INK)
 	for child: Node in node.get_children():
 		_recolor(child, old_ink, old_muted)
+
+func _build_monetization() -> void:
+	upgrade_panel = UpgradePanel.new()
+	add_child(upgrade_panel)
+	upgrade_panel.closed.connect(_close_upgrade)
+	upgrade_panel.purchase_requested.connect(func() -> void: billing.purchase())
+	upgrade_panel.restore_requested.connect(billing.restore)
+	peek_offer = PeekOffer.new()
+	add_child(peek_offer)
+	peek_offer.closed.connect(_close_peek_offer)
+	peek_offer.watch_requested.connect(_watch_peek_ad)
+	# Godot GUI hit testing follows tree order, independently of CanvasItem z_index.
+	move_child(ad_overlay, -1)
+	peek_offer.upgrade_requested.connect(func() -> void:
+		_close_peek_offer()
+		_open_upgrade()
+	)
+
+func _open_upgrade() -> void:
+	upgrade_panel.refresh(billing)
+	upgrade_panel.show()
+	_sync_pause()
+
+func _close_upgrade() -> void:
+	upgrade_panel.hide()
+	_sync_pause()
+
+func _plus_changed(value: bool) -> void:
+	progress.plus_enabled = value
+	if not billing.unlocked_themes().has(progress.preferred_theme):
+		progress.preferred_theme = -1
+		theme_choice.select(0)
+	if collection_panel.visible:
+		collection_panel.refresh()
+	upgrade_panel.refresh(billing)
+	_refresh_peek()
+	_checkpoint()
+
+func _process(_delta: float) -> void:
+	if peek_button != null:
+		_refresh_peek()
+
+func _refresh_peek() -> void:
+	var model: MatchRound = progress.round_state
+	peek_button.disabled = phase != "playing" or model.opening or model.resolving or model.peeking or model.complete() or model.peek_used
+	var caption: String = "Quick Peek · Used" if model.peek_used else "Quick Peek · Ready" if billing.has_plus() or model.peek_earned else "Quick Peek · Watch ad"
+	if peek_button.text != caption:
+		peek_button.text = caption
+		GameStyle.skin_button(peek_button, caption.ends_with("Ready"))
+
+func _quick_peek() -> void:
+	var model: MatchRound = progress.round_state
+	if phase != "playing" or get_tree().paused or model.opening or model.resolving or model.complete() or model.peek_used:
+		return
+	if model.can_peek(billing.has_plus()):
+		_run_peek()
+	else:
+		peek_offer.open(use_native_rewarded)
+		_sync_pause()
+
+func _run_peek() -> void:
+	var model: MatchRound = progress.round_state
+	if not model.begin_peek(billing.has_plus()):
+		return
+	if not store.save(progress):
+		model.peek_used = false
+		model.finish_peek()
+		_checkpoint()
+		return
+	var ticket: int = epoch
+	phase = "peeking"
+	peek_started_usec = 0
+	status_label.text = "One more look…"
+	for index: int in range(tiles.size()):
+		if not model.removed.has(index):
+			tiles[index].flip_to(true)
+	await get_tree().create_timer(0.25, false).timeout
+	if ticket != epoch:
+		return
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+	peek_started_usec = Time.get_ticks_usec()
+	await get_tree().create_timer(PREVIEW_SECONDS, false).timeout
+	if ticket != epoch:
+		return
+	phase = "peek_concealing"
+	for index: int in range(tiles.size()):
+		if not model.removed.has(index) and not model.selected.has(index):
+			tiles[index].flip_to(false)
+	await get_tree().create_timer(0.25, false).timeout
+	if ticket != epoch:
+		return
+	model.finish_peek()
+	phase = "playing"
+	_refresh_peek()
+	status_label.text = "Find their match." if not model.selected.is_empty() else "Tap two characters to find a pair."
+	_refresh_peek()
+
+func _reward_provider() -> AdsService:
+	return native_ads if use_native_rewarded else ads
+
+func _watch_peek_ad() -> void:
+	if not peek_offer.visible or billing.has_plus() or progress.round_state.peek_earned or progress.round_state.peek_used:
+		return
+	# Explicit test permission; no production UMP or production ad IDs are enabled.
+	var provider: AdsService = _reward_provider()
+	provider.set_consent_allowed(true)
+	peek_offer.watch.disabled = true
+	provider.load_rewarded(progress.round_state.board_key())
+	var request: String = provider.reward_request
+	await get_tree().create_timer(25.0).timeout
+	if request == provider.reward_request and provider.rewarded_state in ["loading", "initializing"]:
+		provider.cancel_rewarded()
+		peek_offer.detail.text = "The test ad timed out. Keep playing or try again."
+		peek_offer.watch.disabled = false
+
+func _close_peek_offer() -> void:
+	peek_offer.hide()
+	ads.cancel_rewarded()
+	native_ads.cancel_rewarded()
+	_sync_pause()
+
+func _rewarded_event(key: String, state: String, detail: String, provider: AdsService) -> void:
+	if key != progress.round_state.board_key():
+		return
+	peek_offer.detail.text = detail
+	peek_offer.watch.disabled = state in ["loading", "initializing", "showing"]
+	if state == "ready" and peek_offer.visible and not backgrounded and not billing.has_plus():
+		provider.show_rewarded()
+		return # The nested showing event owns visibility and pause state.
+	elif state == "ready":
+		peek_offer.watch.disabled = false
+	if provider == native_ads:
+		native_reward_showing = state == "showing"
+	else:
+		ad_overlay.visible = state == "showing"
+		test_reward_button.visible = ad_overlay.visible
+	if state == "dismissed":
+		peek_offer.hide()
+		status_label.text = "Quick Peek is ready. Tap when you want another look." if progress.round_state.peek_earned else "No peek used. Keep matching."
+	_sync_pause()
+	_refresh_peek()
+
+func _peek_reward_earned(key: String, _request: String) -> void:
+	if not progress.round_state.earn_peek(key):
+		return
+	# One persisted board allowance also deduplicates callbacks after a restart.
+	_checkpoint()
+	_refresh_peek()
+
+func _dismiss_simulated_ad() -> void:
+	if ads.rewarded_state == "showing":
+		ads.dismiss_rewarded()
+	else:
+		ads.dismiss()

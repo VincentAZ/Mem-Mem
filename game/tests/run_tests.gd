@@ -13,6 +13,48 @@ class AdCacheStub extends Node:
 		else:
 			cached -= 1
 
+class RewardRequestStub extends RefCounted:
+	var token: String = ""
+	func set_custom_data(value: String) -> void:
+		token = value
+	func get_custom_data() -> String:
+		return token
+
+class RewardInfoStub extends RefCounted:
+	var id: String = ""
+	var request: RewardRequestStub
+	func get_ad_id() -> String:
+		return id
+	func get_load_ad_request() -> RewardRequestStub:
+		return request
+
+class RewardSDKStub extends Node:
+	signal initialization_completed(info: Variant)
+	signal rewarded_ad_loaded(ad: Variant, info: Variant)
+	signal rewarded_ad_failed_to_load(ad: Variant, error: Variant)
+	signal rewarded_ad_failed_to_show_full_screen_content(ad: Variant, error: Variant)
+	signal rewarded_ad_dismissed_full_screen_content(ad: Variant)
+	signal rewarded_ad_user_earned_reward(ad: Variant, reward: Variant)
+	var is_initialization_completed: bool = true
+	var request: RewardRequestStub
+	var cached: Array[String] = []
+	var shown: String = ""
+	func create_rewarded_ad_request() -> RewardRequestStub:
+		return RewardRequestStub.new()
+	func load_rewarded_ad(value: RewardRequestStub) -> void:
+		request = value
+	func is_rewarded_ad_loaded() -> bool:
+		return not cached.is_empty()
+	func remove_rewarded_ad(id: String = "") -> void:
+		if id.is_empty():
+			cached.pop_back()
+		else:
+			cached.erase(id)
+	func show_rewarded_ad(id: String) -> void:
+		shown = id
+	func is_interstitial_ad_loaded() -> bool:
+		return false
+
 func _initialize() -> void:
 	_run.call_deferred()
 
@@ -27,9 +69,13 @@ func _run() -> void:
 	_test_progress()
 	_test_expanded_progress()
 	_test_collection()
+	_test_easier_boards()
+	_test_peek_rules()
 	_test_audio()
 	_test_native_ad_cleanup()
+	_test_native_rewarded_callbacks()
 	await _test_services()
+	await _test_rewarded_services()
 	print("%d checks; %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
 
@@ -58,11 +104,11 @@ func _test_native_ad_cleanup() -> void:
 func _test_round() -> void:
 	for seed_number: int in range(16):
 		for level: int in range(1, 19):
-			var model: MatchRound = MatchRound.create(level, seed_number)
+			var model: MatchRound = MatchRound.create(level, seed_number, 3)
 			check(model.select(0) == "ignored", "preview blocks input")
-			check(model.identities.size() == LevelGenerator.pair_count(level) * 2, "wave controls board size")
+			check(model.identities.size() == LevelGenerator.pair_count(level, 3) * 2, "wave controls board size")
 			check(model.identities != model.preview, "shuffle changes arrangement")
-			check(model.identities == MatchRound.create(level, seed_number).identities, "seed reproduces the exact board")
+			check(model.identities == MatchRound.create(level, seed_number, 3).identities, "seed reproduces the exact board")
 			var counts: Dictionary = {}
 			for identity: int in model.identities:
 				counts[identity] = int(counts.get(identity, 0)) + 1
@@ -91,7 +137,7 @@ func _test_round() -> void:
 			check(model.attempts == counts.size(), "attempts count pairs, not taps")
 			check(model.points() == counts.size() * 120, "perfect accuracy bonus capped at 20 percent")
 			check(model.identities == layout, "positions never move during play")
-	var model: MatchRound = MatchRound.create(3, 44)
+	var model: MatchRound = MatchRound.create(3, 44, 3)
 	model.begin_play()
 	var other: int = 1
 	while model.identities[other] == model.identities[0]:
@@ -145,7 +191,7 @@ func _test_progress() -> void:
 		check(progress.round_state.identities == restored.round_state.identities, "next board survives transition restart")
 		check(progress.round_state.level == level + 1, "explicit advance increments exactly once")
 		previous_score = before
-	check(LevelGenerator.pair_count(6) < LevelGenerator.pair_count(4), "wave includes a breather")
+	check(LevelGenerator.pair_count(6) < LevelGenerator.pair_count(5), "wave includes a breather")
 	var invalid: Dictionary = progress.snapshot()
 	invalid.banked_points += 100000
 	check(GameProgress.from_snapshot(invalid) == null, "impossible bank balance rejected")
@@ -205,7 +251,7 @@ func _test_collection() -> void:
 	check(p.collect_character(23) and p.collected == [23] and p.choice_tokens == 0, "choice can collect ANY character from another theme")
 	check(not p.collect_character(23) and not p.collect_character(-1) and not p.collect_character(24), "duplicates and invalid choices cannot spend credits")
 	p.advance()
-	check(p.round_state.identities.all(func(id: int) -> bool: return id >= 12 and id < 24), "second board introduces firefighters")
+	check(p.round_state.identities.all(func(id: int) -> bool: return PeopleCatalog.theme_of(id) == 1), "second board introduces firefighters")
 	p.round_state.begin_play()
 	var other: int = 1
 	while p.round_state.identities[other] == p.round_state.identities[0]:
@@ -229,7 +275,7 @@ func _test_collection() -> void:
 	loaded = GameProgress.from_snapshot(p.snapshot())
 	check(loaded.dark_mode and loaded.background == 3 and loaded.preferred_theme == 3, "appearance and chosen theme survive reload")
 	loaded.advance()
-	check(loaded.round_state.identities.all(func(id: int) -> bool: return id >= 36), "preferred theme takes effect on next board")
+	check(loaded.round_state.identities.all(func(id: int) -> bool: return PeopleCatalog.theme_of(id) == 3), "preferred theme takes effect on next board")
 	for key: String in ["collected", "choice_tokens", "reward_level", "background", "preferred_theme", "dark_mode", "discovery_steps", "last_discovery"]:
 		var corrupt: Dictionary = p.snapshot()
 		corrupt[key] = "invalid"
@@ -240,7 +286,7 @@ func _test_collection() -> void:
 	# A real schema-1 fixture lacks both generation and collection fields.
 	var legacy: GameProgress = GameProgress.create(4815)
 	legacy.round_state = MatchRound.create(4, 4815, 1)
-	legacy.banked_points = LevelGenerator.completed_pairs(3) * 120
+	legacy.banked_points = LevelGenerator.completed_pairs(3, 2) * 120
 	legacy.round_state.begin_play()
 	var old: Dictionary = {"version": 1, "seed": legacy.seed_value, "banked_points": legacy.banked_points, "round": legacy.round_state.snapshot(), "reduced_motion": false, "haptics": true, "sound": false}
 	old.round.erase("generation")
@@ -250,7 +296,7 @@ func _test_collection() -> void:
 	check(loaded.round_state.generation == 1 and not loaded.sound and loaded.collected.is_empty(), "legacy generation and settings preserved without invented rewards")
 	_clear_round(loaded.round_state)
 	loaded.advance()
-	check(loaded.round_state.generation == 3, "migrated player enters new generator only after the old board")
+	check(loaded.round_state.generation == 4, "migrated player enters new generator only after the old board")
 	# Regression: 50% accuracy at the old three-board threshold must never collect.
 	var imperfect: GameProgress = GameProgress.create(211)
 	for level: int in range(1, 7):
@@ -298,7 +344,7 @@ func _test_expanded_progress() -> void:
 		for chosen_theme: int in [-1, 0, 1, 2, 3]:
 			var model: MatchRound = MatchRound.create(level, 924, 3, chosen_theme)
 			check(model.identities.size() == 16, "peak boards have 16 cards in every theme")
-			check(LevelGenerator.columns(level) == 4, "16 cards use a four-column grid")
+			check(LevelGenerator.columns(level, 3) == 4, "16 cards use a four-column grid")
 			check(MatchRound.from_snapshot(model.snapshot()) != null, "peak board round-trips before play")
 			_clear_round(model)
 			check(model.matches() == 8 and model.points() == 960, "all eight pairs are clearable for a perfect 960")
@@ -334,7 +380,7 @@ func _test_expanded_progress() -> void:
 				_clear_round(restored.round_state)
 				var points: int = restored.total_points()
 				restored.advance()
-				check(restored.round_state.generation == 3 and restored.total_points() == points, "advancement changes generation without changing score")
+				check(restored.round_state.generation == 4 and restored.total_points() == points, "advancement changes generation without changing score")
 				var reloaded: GameProgress = GameProgress.from_snapshot(restored.snapshot())
 				check(reloaded != null and reloaded.snapshot() == restored.snapshot(), "mixed legacy/new wave saves stay valid across another complete wave")
 	var fresh: GameProgress = GameProgress.create(483)
@@ -477,3 +523,193 @@ func _test_services() -> void:
 		node.queue_free()
 	DirAccess.remove_absolute("user://test_ownership.json")
 	await process_frame
+
+func _test_easier_boards() -> void:
+	check(PeopleCatalog.COUNT == 56, "56 stable collectible IDs")
+	for theme_id: int in range(7):
+		check(PeopleCatalog.characters(theme_id).size() == 8, "eight different characters per theme")
+	for seed_number: int in range(12):
+		for level: int in range(1, 37):
+			for plus: bool in [false, true]:
+				var pool: Array[int] = PeopleCatalog.available_themes(plus)
+				for theme_id: int in [-1] + pool:
+					var model: MatchRound = MatchRound.create(level, seed_number, 4, theme_id, 1, pool)
+					var counts: Dictionary = {}
+					for character: int in model.character_layout():
+						check(PeopleCatalog.is_unlocked(character, plus), "locked characters never enter a generated board")
+						counts[character] = int(counts.get(character, 0)) + 1
+					for count: int in counts.values():
+						check(count == 2, "every visible character has exactly one identical mate")
+					check(model.identities.size() == LevelGenerator.EASY_PAIRS[(level - 1) % 12] * 2, "new card-count rhythm is exact")
+					check(MatchRound.from_snapshot(model.snapshot()) != null, "new board regenerates with its frozen theme pool")
+					if model.identities.size() >= 12:
+						check(LevelGenerator.pair_count(level + 1) == 2, "every hard board is immediately followed by four cards")
+	# Every old pair maps one-to-one onto a distinct visible character, including twins.
+	for generation: int in [1, 2, 3]:
+		for level: int in range(1, 25):
+			var model: MatchRound = MatchRound.create(level, 992, generation)
+			var mapping: Dictionary = {}
+			for index: int in range(model.identities.size()):
+				mapping[model.identities[index]] = model.character_at(index)
+			var unique: Dictionary = {}
+			for character: int in mapping.values():
+				unique[character] = true
+			check(unique.size() == mapping.size(), "legacy variants never produce identical-looking nonmatches")
+			var old: GameProgress = GameProgress.create(992)
+			old.round_state = model
+			old.expanded_from_level = 1 if generation == 3 else level + 1
+			old.banked_points = LevelGenerator.completed_pairs(level - 1, generation) * 110
+			var fixture: Dictionary = old.snapshot()
+			fixture.version = 3
+			fixture.erase("easy_from_level")
+			var restored: GameProgress = GameProgress.from_snapshot(fixture)
+			check(restored != null and restored.round_state.identities == model.identities and restored.round_state.character_layout() == model.character_layout(), "schema-3 layouts migrate deterministically without losing pairs")
+			if restored != null:
+				_clear_round(restored.round_state)
+				restored.advance()
+				check(restored.round_state.identities.size() == 4, "all migrated players enter the easier wave with four cards")
+				check(GameProgress.from_snapshot(restored.snapshot()) != null, "score bounds preserve all three historical generations")
+	var p: GameProgress = GameProgress.create(27)
+	_clear_round(p.round_state)
+	p.settle_collection_reward()
+	check(not p.collect_character(32) and p.choice_tokens == 1, "free perfect choice cannot claim a paid character")
+	p.plus_enabled = true
+	check(p.collect_character(55) and p.collected == [55], "Plus unlocks paid collectible choices without auto-claiming")
+	p.preferred_theme = 6
+	p.advance()
+	var snapshot: Dictionary = p.snapshot()
+	var reloaded: GameProgress = GameProgress.from_snapshot(snapshot)
+	check(not reloaded.plus_enabled and reloaded.collected == [55], "game saves preserve owned characters but never grant a purchase")
+	check(reloaded.round_state.identities == p.round_state.identities and reloaded.round_state.theme_pool == PeopleCatalog.ALL_THEMES, "active paid board survives a missing/revoked entitlement unchanged")
+	_clear_round(reloaded.round_state)
+	reloaded.advance()
+	check(reloaded.round_state.theme_pool == PeopleCatalog.FREE_THEMES and reloaded.round_state.chosen_theme == -1, "next board respects current entitlement")
+
+func _test_peek_rules() -> void:
+	var p: GameProgress = GameProgress.create(51)
+	var m: MatchRound = p.round_state
+	check(not m.begin_peek(true), "opening cannot consume a peek")
+	m.begin_play()
+	check(not m.begin_peek(false), "free players need an earned ad reward")
+	check(not m.earn_peek("wrong-board"), "stale reward cannot unlock a different board")
+	check(m.earn_peek(m.board_key()) and not m.earn_peek(m.board_key()), "earned callback grants one persisted allowance")
+	m.select(0)
+	var selected: Array[int] = m.selected.duplicate()
+	check(m.begin_peek(false) and m.selected == selected and m.attempts == 0, "peek preserves a selected card and does not count as an attempt")
+	check(m.select(m.identities.rfind(m.identities[0])) == "ignored", "peek blocks matching input")
+	check(not m.begin_peek(true), "purchase during a peek cannot grant a second use")
+	var reload: MatchRound = MatchRound.from_snapshot(m.snapshot())
+	check(reload != null and reload.peek_used and not reload.peeking and not reload.begin_peek(true), "restart conceals cards and keeps a consumed peek consumed")
+	m.finish_peek()
+	check(m.select(m.identities.rfind(m.identities[0])) == "match", "first selection still matches normally after peek")
+	m.finish_resolution()
+	_clear_round(m)
+	check(p.settle_collection_reward() and p.choice_tokens == 1, "peek-assisted perfect round earns one choice")
+	check(not p.settle_collection_reward() and not m.earn_peek(m.board_key()), "completed board cannot receive extra choice or peek")
+	p.advance()
+	check(not p.round_state.peek_used and not p.round_state.peek_earned, "next board gets a fresh allowance, not a banked ad reward")
+	p.round_state.begin_play()
+	check(p.round_state.begin_peek(true), "paid player can peek offline without an ad")
+
+func _test_rewarded_services() -> void:
+	var ads: SimulatedAds = SimulatedAds.new()
+	root.add_child(ads)
+	var rewards: Array[String] = []
+	ads.reward_earned.connect(func(key: String, _request: String) -> void: rewards.append(key))
+	ads.load_rewarded("board-a")
+	check(ads.rewarded_state == "blocked", "rewarded ads honor consent")
+	ads.set_consent_allowed(true)
+	ads.load_rewarded("board-a")
+	await create_timer(0.2).timeout
+	ads.show_rewarded()
+	ads.dismiss_rewarded()
+	check(rewards.is_empty(), "dismissing a rewarded ad never grants its reward")
+	ads.load_rewarded("board-a")
+	await create_timer(0.2).timeout
+	ads.show_rewarded()
+	var old_request: String = ads.reward_request
+	ads.earn_test_reward()
+	ads.earn_test_reward()
+	ads.dismiss_rewarded()
+	check(rewards == ["board-a"], "only the explicit earned callback rewards, exactly once")
+	ads.load_rewarded("board-b")
+	await create_timer(0.2).timeout
+	ads.show_rewarded()
+	ads._deliver_reward(old_request)
+	check(rewards.size() == 1, "old callback cannot award a new board")
+	ads.set_ad_free(true)
+	ads.earn_test_reward()
+	check(rewards.size() == 1 and ads.reward_request.is_empty(), "restored Plus suppresses pending rewarded callbacks")
+	ads.set_ad_free(false)
+	ads.fail_load = true
+	ads.load_rewarded("board-c")
+	await create_timer(0.2).timeout
+	check(ads.rewarded_state == "failure" and rewards.size() == 1, "no-fill grants nothing")
+	ads.fail_load = false
+	ads.load_rewarded("board-c")
+	ads.cancel_rewarded()
+	await create_timer(0.2).timeout
+	check(ads.rewarded_state == "cancelled", "late loading result cannot reopen a cancelled ad")
+	ads.load_rewarded("board-c")
+	await create_timer(0.2).timeout
+	ads.fail_show = true
+	ads.show_rewarded()
+	ads.earn_test_reward()
+	check(ads.rewarded_state == "failure" and rewards.size() == 1, "failed presentation grants nothing")
+	ads.queue_free()
+
+func _test_native_rewarded_callbacks() -> void:
+	var bridge: AdmobBridge = AdmobBridge.new()
+	var sdk: RewardSDKStub = RewardSDKStub.new()
+	var ads: NativeAds = NativeAds.new()
+	root.add_child(bridge)
+	bridge.add_child(sdk)
+	bridge.sdk = sdk
+	root.add_child(ads)
+	ads.bridge = bridge
+	ads.set_consent_allowed(true)
+	var earned: Array[String] = []
+	ads.reward_earned.connect(func(key: String, _request: String) -> void: earned.append(key))
+	ads.load_rewarded("native-a")
+	var late: RewardInfoStub = RewardInfoStub.new()
+	late.id = "late-ad"
+	late.request = sdk.request
+	ads.cancel_rewarded()
+	ads.load_rewarded("native-b")
+	sdk.cached.append(late.id)
+	sdk.rewarded_ad_loaded.emit(late, null)
+	check(ads.rewarded_state == "loading" and sdk.cached.is_empty(), "late native load is discarded by its original request token")
+	var ad: RewardInfoStub = RewardInfoStub.new()
+	ad.id = "current-ad"
+	ad.request = sdk.request
+	sdk.cached.append(ad.id)
+	sdk.rewarded_ad_loaded.emit(ad, null)
+	check(ads.rewarded_state == "ready", "matching native callback makes rewarded ad ready")
+	ads.show_rewarded()
+	check(sdk.shown == ad.id and ads.rewarded_state == "showing", "native display targets the exact ready ad")
+	sdk.rewarded_ad_user_earned_reward.emit(late, null)
+	check(earned.is_empty(), "stale native earned event cannot grant a different board")
+	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
+	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
+	check(earned == ["native-b"], "native SDK earned event grants exactly once")
+	sdk.rewarded_ad_dismissed_full_screen_content.emit(ad)
+	check(ads.rewarded_state == "dismissed" and earned.size() == 1, "native dismissal adds no reward")
+	ads.set_ad_free(true)
+	check(sdk.cached.is_empty(), "restored Plus drains native rewarded cache")
+	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
+	check(earned.size() == 1, "restoration invalidates a late native earned event")
+	ads.set_ad_free(false)
+	ads.load_rewarded("native-c")
+	ad.request = sdk.request
+	sdk.rewarded_ad_failed_to_load.emit(ad, null)
+	check(ads.rewarded_state == "failure", "native load failure remains retryable")
+	ads.load_rewarded("native-c")
+	ad.request = sdk.request
+	sdk.cached.append(ad.id)
+	sdk.rewarded_ad_loaded.emit(ad, null)
+	ads.show_rewarded()
+	sdk.rewarded_ad_failed_to_show_full_screen_content.emit(ad, null)
+	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
+	check(ads.rewarded_state == "failure" and earned.size() == 1, "native presentation failure cannot grant a reward")
+	ads.queue_free()
+	bridge.queue_free()

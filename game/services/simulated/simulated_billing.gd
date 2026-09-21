@@ -7,6 +7,10 @@ var pending: bool = false
 var _generation: int = 0
 var _busy: bool = false
 
+func _init() -> void:
+	simulated = true
+	product_price = INTRO_PRICE_USD
+
 func purchase(product_id: String = REMOVE_ADS) -> void:
 	if product_id != REMOVE_ADS:
 		_report("failure", "SIMULATED: unknown product.")
@@ -74,7 +78,7 @@ func _grant(result: String) -> void:
 		_report("failure", "SIMULATED: could not save ownership; retry restoration.")
 		return
 	_set_entitlement(true)
-	_report(result, "SIMULATED: ad removal is active. No money was charged.")
+	_report(result, "SIMULATED: Mem-Mem Plus is active. No money was charged.")
 
 func _write(value: bool) -> bool:
 	var temporary: String = save_path + ".tmp"

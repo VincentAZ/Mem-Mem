@@ -3,6 +3,7 @@ extends Button
 ## Owned cards have a gold frame, stage and animated full-body portrait.
 var character: int = 0
 var owned: bool = false
+var locked: bool = false
 var selected: bool = false:
 	set(value):
 		selected = value
@@ -26,7 +27,7 @@ func _ready() -> void:
 	focus_entered.connect(queue_redraw)
 	focus_exited.connect(queue_redraw)
 	person = CollectionPerformer.new()
-	person.variant = character * 2
+	person.variant = character
 	person.phase = character * 0.83
 	person.style = character % 3
 	person.cheering = owned
@@ -36,7 +37,7 @@ func _ready() -> void:
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(name_label)
-	badge = GameStyle.label("COLLECTED" if owned else "TO DISCOVER", 9)
+	badge = GameStyle.label("COLLECTED" if owned else "PLUS THEME" if locked else "TO DISCOVER", 9)
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	badge.add_theme_color_override("font_color", GameStyle.accent() if owned else GamePalette.muted)
@@ -69,7 +70,7 @@ func stop_feedback() -> void:
 	if person != null:
 		person.stop_reaction()
 	if badge != null:
-		badge.text = "COLLECTED" if owned else "TO DISCOVER"
+		badge.text = "COLLECTED" if owned else "PLUS THEME" if locked else "TO DISCOVER"
 
 func _process(delta: float) -> void:
 	tap_cooldown = maxf(0.0, tap_cooldown - delta)

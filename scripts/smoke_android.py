@@ -122,12 +122,12 @@ verify('432x900' in adb('shell', 'wm', 'size').decode(), 'bundled emulator resol
 adb('shell', 'wm', 'density', '160')
 adb('shell', 'am', 'force-stop', PACKAGE)
 prior = snapshot()
-if prior and prior.get('version', 1) < 3:
+if prior and prior.get('version', 1) < 4:
     launch()
-    migrated = wait_for(lambda s: s.get('version') == 3)
+    migrated = wait_for(lambda s: s.get('version') == 4)
     verify(all(migrated[key] == prior[key] for key in ['seed', 'banked_points', 'sound', 'haptics', 'reduced_motion']), 'installed update preserves score and preferences')
     verify(all(migrated['round'][key] == value for key, value in prior['round'].items()), 'installed update preserves the exact legacy board')
-    verify(migrated['expanded_from_level'] == prior['round']['level'] + 1, 'expanded wave begins after the saved board')
+    verify(migrated['easy_from_level'] == prior['round']['level'] + 1, 'expanded wave begins after the saved board')
     if prior.get('version') == 2:
         verify(all(migrated[key] == prior[key] for key in ['collected', 'choice_tokens', 'reward_level', 'dark_mode', 'background']), 'installed update preserves collection, choices and appearance')
     adb('shell', 'am', 'force-stop', PACKAGE)
@@ -139,19 +139,19 @@ verify(state['round']['level'] == 1, 'new journey starts at level 1')
 shot('board')
 identities = state['round']['identities']
 other = next(i for i, value in enumerate(identities) if value != identities[0])
-tap(0, 6)
-tap(other, 6)
+tap(0, 4)
+tap(other, 4)
 time.sleep(.3)
 shot('mismatch')
 time.sleep(1.1)
 verify(snapshot()['round']['attempts'] == 1 and not snapshot()['round']['removed'], 'mismatch records one attempt and removes no cards')
 shot('mismatch-reset')
-# Two more mismatches make this board exactly 50%, matching the reported bug.
-for _ in range(2):
-    tap(0, 6)
-    tap(other, 6)
+# One more mismatch makes this four-card board exactly 50%.
+for _ in range(1):
+    tap(0, 4)
+    tap(other, 4)
     time.sleep(1.3)
-verify(snapshot()['round']['attempts'] == 3, 'three deliberate mismatches are recorded')
+verify(snapshot()['round']['attempts'] == 2, 'two deliberate mismatches are recorded')
 mate = pair(0, snapshot())
 state = wait_for(lambda s: len(s['round']['removed']) == 2)
 time.sleep(.35)
@@ -159,13 +159,13 @@ shot('walking')
 restart()
 verify(snapshot() == state, 'process termination during departure preserves layout, attempts and score')
 shot('restarted')
-while len(snapshot()['round']['removed']) < 6:
+while len(snapshot()['round']['removed']) < 4:
     state = snapshot()
-    first = next(i for i in range(6) if i not in state['round']['removed'])
+    first = next(i for i in range(4) if i not in state['round']['removed'])
     pair(first, state)
     time.sleep(.70)
 completed = snapshot()
-verify(len(completed['round']['removed']) == 6 and completed['round']['attempts'] == 6, 'complete board records three matches in six comparisons: exactly 50 percent')
+verify(len(completed['round']['removed']) == 4 and completed['round']['attempts'] == 4, 'complete board records two matches in four comparisons: exactly 50 percent')
 # Kill before choosing Next: restore this result and wait for explicit input.
 restart()
 verify(snapshot()['round'] == completed['round'] and snapshot()['banked_points'] == completed['banked_points'], 'completed level survives restart without advancing or changing score')
@@ -177,7 +177,7 @@ launch()
 time.sleep(.4)
 verify(snapshot() == completed, 'completed result also survives background/resume')
 state = next_level(1)
-verify(state['banked_points'] == 330, 'Next level banks the completion bonus exactly once')
+verify(state['banked_points'] == 220, 'Next level banks the completion bonus exactly once')
 shot('level-two')
 pair(0, state)
 state = wait_for(lambda s: len(s['round']['removed']) == 2)
@@ -217,12 +217,12 @@ finally:
     if data_before == b'1':
         adb('shell', 'svc', 'data', 'enable')
 # Play through the peak and back down, using touch input for every match.
-for level in range(2, 9):
+for level in range(2, 10):
     state = wait_for(lambda s: s['round']['level'] == level and not s['round']['opening'])
-    if level in [4, 8]:
-        shot('twelve-board' if level == 4 else 'sixteen-board')
-    if level == 8:
-        verify(len(state['round']['identities']) == 16, 'level 8 uses all 16 touch targets')
+    if level in [5, 9]:
+        shot('twelve-board' if level == 5 else 'sixteen-board')
+    if level == 9:
+        verify(len(state['round']['identities']) == 16, 'level 9 uses all 16 touch targets')
     count = len(state['round']['identities'])
     while True:
         state = snapshot()
@@ -248,9 +248,9 @@ for level in range(2, 9):
         verify(snapshot() == claimed, 'collected character and spent choice persist; restart does not re-award')
     state = next_level(level)
     verify(state['round']['level'] == level + 1, f'button advances level {level} → {level + 1}')
-verify(len(state['round']['identities']) == 8 and state['banked_points'] == 4530, 'difficulty eases after the 16-card peak with exact cumulative score')
+verify(len(state['round']['identities']) == 4 and state['banked_points'] == 4180, 'difficulty eases after the 16-card peak with exact cumulative score')
 verify(state['sound'] is False, 'mute remains saved across restart and the full difficulty wave')
-verify(state['choice_tokens'] == 6 and state['collected'] == [0], 'seven perfect boards bank choices; only the explicitly chosen character is collected')
+verify(state['choice_tokens'] == 7 and state['collected'] == [0], 'eight perfect boards bank choices; only the explicitly chosen character is collected')
 shot('breather')
 adb('shell', 'input', 'keyevent', '4')
 time.sleep(.3)

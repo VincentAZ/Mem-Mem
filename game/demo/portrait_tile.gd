@@ -96,6 +96,8 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 func _draw_portrait() -> void:
-	draw_circle(Vector2(83, 83), 73, PeopleCatalog.BACKDROP[PeopleCatalog.family(variant) / 6].darkened(0.18 if GamePalette.dark else 0.0))
-	draw_texture_rect_region(PeopleCatalog.atlas(variant, delighted), Rect2(5, 5, 156, 164), PeopleCatalog.portrait_region(variant, delighted))
-	CharacterAccessory.draw_on(self, variant)
+	draw_circle(Vector2(83, 83), 73, PeopleCatalog.BACKDROP[PeopleCatalog.theme_of(variant)].darkened(0.18 if GamePalette.dark else 0.0))
+	var crop: Rect2 = PeopleCatalog.portrait_region(variant, delighted)
+	var fit: float = minf(156.0 / crop.size.x, 164.0 / crop.size.y)
+	var extent: Vector2 = crop.size * fit
+	draw_texture_rect_region(PeopleCatalog.atlas(variant, delighted), Rect2(Vector2(83, 87) - extent / 2, extent), crop)

@@ -3,14 +3,19 @@
 ## Rules, generation, and rendering
 
 `LevelGenerator` creates deterministic boards from a journey seed and level number.
-Generator 3 repeats 3, 4, 4, 6, 4, 3, 6, 8, 4, 6, 8, 4 pairs. The corresponding
-lookalike-family counts are 0, 0, 1, 2, 1, 0, 2, 2, 1, 3, 4, 1. Sixteen-card boards
-use four columns; twelve-card boards use three; smaller boards use two. At least
-two lookalike families let eight pairs fit within a six-character theme.
-Four themes rotate, with a mixed cast every fifth level unless the player pins a
-theme. Every matching identity occurs exactly twice. Generators 1 and 2 retain the
-old six-level wave and exact seeded layouts for existing saves. No runtime AI is
-involved. Cosmetics and presentation randomness cannot alter scoring/layout.
+Generator 4 repeats 2, 3, 4, 3, 6, 2, 4, 3, 8, 2, 4, 3 pairs. Both hard board
+sizes (12 and 16 cards) are immediately followed by four cards. The wave is anchored
+at the saved `easy_from_level`, starting after the current board for migrated users.
+Sixteen cards use four columns, twelve use three, and smaller boards use two.
+
+Each of seven themes has eight unique characters. The first four themes are free;
+Plus unlocks the other three. A round snapshots its eligible theme pool, so an
+entitlement change cannot invalidate its exact board. Mixed boards use only that
+pool. Generators 1–3 still regenerate historical matching IDs and layouts. A
+bijective display mapping reserves each original person, then replaces duplicate
+variants with unused same-theme characters in sorted legacy-ID order. No two
+different pairs have the same visible character. New boards match stable character
+IDs directly. No runtime AI is involved.
 
 `MatchRound` owns the fixed shuffled positions, selected/removed indexes, comparison
 count, and opening phase. It rejects input during preview or two-card resolution,
@@ -22,7 +27,7 @@ conceal, input, walking departures,
 persistent completion card, and explicit Next level button. Animation never awards points or determines
 ownership. A generation counter prevents stale asynchronous callbacks from touching a
 later board. The last departure completes before the result appears. `CheerLineup`
-brings back all 6–16 tile characters, including both members of each pair. They walk
+brings back all 4–16 tile characters, including both members of each pair. They walk
 in on varied left/right/split routes, then cheer in one or two rows around the unchanged score/accuracy
 result. Only Next level advances; it locks immediately against repeated taps.
 There is no share control in this milestone.
@@ -52,7 +57,7 @@ the older intact slot recovers progress. This detects accidental corruption, not
 Both invalid slots result in a fresh journey with a visible notice. A failed write
 leaves existing saves intact and displays a save warning without blocking play.
 
-Schema 3 payloads contain the journey seed, current level, exact board, removed pairs,
+Schema 4 payloads contain the journey seed, current level, exact board, removed pairs,
 comparison count, opening status, completed-level points, preferences, collection
 ownership, saved choice tokens, and the last settled reward level. Retired discovery
 fields remain readable solely for compatibility with earlier saves.
@@ -62,11 +67,13 @@ repeats its preview; an interrupted completion restores its result and cheering 
 then waits for Next level. Schema 1 migrates explicitly: absent generation means
 legacy generator 1, current positions stay unchanged, and collection/settings fields
 start at their defaults. Sound retains the earlier optional-field migration. The
-next board uses generator 3 and the selected theme. Schema 2 keeps all existing
-collection and appearance fields. The new `expanded_from_level` boundary records
-the first expanded-wave board. Bank bounds sum old-wave pairs before that boundary
-and new-wave pairs afterward, counting only completed levels. The boundary must
-agree with the saved round's generator; invalid or contradictory values are rejected. Rewards are not invented for
+next board uses generator 4 and its snapshotted unlocked theme pool. Schema 4 adds
+`easy_from_level`, round `wave_start`, `theme_pool`, `peek_earned`, and `peek_used`.
+The existing `expanded_from_level` still separates generations 1/2 from 3.
+Bank bounds sum pairs in all historical intervals, plus the new wave anchored at
+`easy_from_level`. Both boundaries must agree with the current round generation.
+Paid ownership is runtime service state, deliberately absent from progress saves.
+ Rewards are not invented for
 historical completed levels. The current completed board can settle its reward.
 No time-based callback advances a level or awards score.
 
@@ -90,7 +97,7 @@ card flip to its intended face and removes active walking/point/spark effects.
 using the saved reward-level marker. Exact perfect accuracy (`attempts == matches`)
 grants one bankable choice. Imperfect rounds grant no collection reward. Board
 completion never picks or collects a character: only an explicit claim adds ownership,
-requiring a valid, unowned character ID and a positive credit balance. The earlier
+requiring a valid, unowned character from an unlocked theme and a positive credit balance. The earlier
 every-third-board surprise reward was removed in 0.5.1. Already collected characters
 and banked choices are preserved; old discovery counters cannot trigger new awards.
 
@@ -121,12 +128,15 @@ consumption together, rolling back only those two fields if a write fails; it ne
 replaces the live round or its in-flight selection. All-owned collections preserve
 extra credits. The feature is local game progression, independent of paid ownership.
 
-`PeopleCatalog` defines 24 collectable character IDs and 48 match IDs. Eight PNG
-atlases cover four themes in neutral and delighted/cheering poses. Atlas bounds are
-in `AtlasRegions`; portrait and walking art share the source. Accessories are
-code-controlled, so paired variants differ only in the comparison detail.
-`Walker` uses textured cutouts with continuous leg, bounce, and sway motion. Entry
-and exit sides, split routes, phases, and cheer styles vary independently of rules.
+`PeopleCatalog` defines 56 stable IDs. IDs 0–23 retain their old meaning. IDs
+24–31 add two characters to each original theme; IDs 32–55 are the new paid themes.
+Sixteen PNG atlases supply neutral and delighted poses. `AtlasRegions` preserves
+original bounds; `ExpandedAtlas` contains measured alpha bounds for the new sheets.
+Explicit theme-member lists and artwork groups map stable IDs to atlas regions,
+portrait framing, and walk/hop/float profiles. They do not infer theme or atlas
+membership from character-number arithmetic. Atlases load on demand into a shared
+strong-reference cache. Accessory overlays are unused.
+`Walker` preserves whole nonhuman silhouettes; only human figures use leg strips.
 
 `GameStyle` centralizes surfaces, button states and accent colors. The HUD uses three
 equal-width statistic columns with a highlighted round score centered on the screen.
@@ -142,8 +152,8 @@ credits and prompt record for generated images and CC0 recording provenance.
 
 ## Services
 
-- `BillingService`: `purchase`, `restore`, state messages, and entitlement changes.
-- `AdsService`: load/show, consent/ownership gating, and invalidation of loaded ads.
+- `BillingService`: purchase/restore, product information, Plus entitlement, and unlocked themes.
+- `AdsService`: interstitial and rewarded load/show, board/request IDs, earned-reward events, consent/ownership gates, and cancellation.
 - `ConsentService`: request status/show form, availability, and ad-request permission.
 
 The lab injects simulated implementations. Fake ownership is explicitly named
@@ -158,7 +168,7 @@ Purchase tokens are not logged. Production requires server verification and a
 proper purchase-processing lifecycle before enabling transactions.
 
 `AdmobBridge` lazily creates the plugin node on Android. `NativeAds` uses only the
-plugin's fixed Google demo interstitial unit. The lab's explicit demo-ad action
+plugin's fixed Google demo interstitial and rewarded units. The lab's explicit demo-ad action
 permits demo traffic without claiming a successful UMP flow; the independent
 `NativeConsent` controls exercise actual UMP status and form APIs. This shortcut
 must never be carried into a production advertising path. Production consent and
@@ -174,3 +184,26 @@ Physical-device tuning and further art feedback, additional themes, paid packs,
 verified purchase processing, production ads, analytics, and iOS export remain future
 work. Native purchases are still disabled. Device playtesting will guide further
 pacing, readability, and difficulty tuning.
+
+## Quick Peek and test monetization
+
+`MatchRound` owns the earned/consumed allowance and blocks input during Peek.
+A single use reveals unmatched cards for 0.5 fully visible foreground seconds,
+excluding flips. The first selection is preserved. Consumption is checkpointed
+before reveal; a failed checkpoint leaves the allowance usable. Restart ends any
+transient reveal without restoring a consumed allowance. Background hides the board
+and pauses the reveal timer. Ads never change attempts, points or perfect eligibility.
+
+The default debug experience uses `SimulatedBilling` for the complete Plus bundle
+under the permanent `remove_ads` product. Pending/cancelled/failed operations grant
+nothing. The UI labels every purchase simulation; native purchasing stays disabled.
+Plus restores theme access, automatic per-board peeks and complete ad suppression.
+Already earned collection ownership remains local and survives entitlement loss.
+
+`NativeAds` places a unique non-personal request token in the test rewarded request's
+custom data and validates callbacks against it. Only `rewarded_ad_user_earned_reward`
+grants an allowance, once per request and once per board. Dismissal grants nothing.
+Cancellation invalidates pending requests and cached ads. An explicit test permission
+allows Google's demo traffic; it is not a production UMP consent implementation.
+The UI returns to a Ready button after reward rather than automatically peeking.
+No ads or purchases are automatically shown during play.

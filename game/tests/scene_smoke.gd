@@ -31,7 +31,7 @@ func run(screen: GameScreen) -> void:
 	_check(app.collection_panel.owned_only and app.collection_panel.entries.is_empty() and app.collection_panel.empty.visible, "new players see an explicit empty My collection state")
 	await _capture("empty-collection")
 	await _click(app.collection_panel.discover.global_position + app.collection_panel.discover.size * 0.5)
-	_check(app.collection_panel.entries.size() == 24 and app.collection_panel.action.disabled, "Discover all exposes the full catalog without claiming unearned characters")
+	_check(app.collection_panel.entries.size() == PeopleCatalog.COUNT and app.collection_panel.action.disabled, "Discover all exposes the full catalog without claiming unearned characters")
 	await _click(app.collection_panel.entries[0].global_position + app.collection_panel.entries[0].size * 0.5)
 	_check(app.collection_panel.fireworks.origins.is_empty() and collection_cues.is_empty(), "browsing without an earned choice does not celebrate a nonexistent reward")
 	await _capture("discover")
@@ -74,10 +74,10 @@ func run(screen: GameScreen) -> void:
 			await _capture("walking")
 	await _wait_phase("celebrating")
 	await get_tree().create_timer(1.45).timeout
-	_check(model.complete() and model.points() == 345, "three matches and 75 percent accuracy produce 345 points")
+	_check(model.complete() and model.points() == 226, "two matches and 67 percent accuracy produce 226 points")
 	_check(app.motion_layer.get_child_count() == 0, "departures finish before the completion card")
-	_check_cast(6)
-	_check(cues.count(&"match") == 3 and cues.count(&"complete") == 1, "each pair sounds once and completion sounds once")
+	_check_cast(4)
+	_check(cues.count(&"match") == 2 and cues.count(&"complete") == 1, "each pair sounds once and completion sounds once")
 	await _capture("complete")
 	await get_tree().create_timer(2.2).timeout
 	_check(app.phase == "celebrating" and app.progress.round_state.level == 1 and app.completion.visible, "completion remains until Next level is pressed")
@@ -93,15 +93,15 @@ func run(screen: GameScreen) -> void:
 	app._show_level()
 	await _wait_phase("celebrating")
 	await get_tree().create_timer(1.45).timeout
-	_check(app.progress.total_points() == 345 and app.progress.round_state.level == 1, "reloading a completion keeps its result and score")
-	_check_cast(6)
+	_check(app.progress.total_points() == 226 and app.progress.round_state.level == 1, "reloading a completion keeps its result and score")
+	_check_cast(4)
 	_check(cues.count(&"complete") == 1, "restoring a completed result does not replay its reward sound")
 	await _capture("complete-restored")
 	await _click(app.next_level_button.global_position + app.next_level_button.size * 0.5)
 	app._next_level()
 	await _wait_phase("playing")
-	_check(app.progress.round_state.level == 2 and app.tiles.size() == 8, "Next level opens a new 8-tile board only once")
-	_check(app.progress.total_points() == 345, "advancement does not award twice")
+	_check(app.progress.round_state.level == 2 and app.tiles.size() == 6, "Next level opens a new 6-tile board only once")
+	_check(app.progress.total_points() == 226, "advancement does not award twice")
 	_check(app.cheer_lineup.people.is_empty(), "next level removes the previous celebration cast")
 	await _capture("level-two")
 	model = app.progress.round_state
@@ -109,7 +109,7 @@ func run(screen: GameScreen) -> void:
 	await _tap(model.identities.rfind(model.identities[0]))
 	await get_tree().create_timer(0.66).timeout
 	var saved: GameProgress = app.store.load_progress()
-	_check(saved != null and saved.total_points() == 445 and saved.round_state.matches() == 1, "partial next level is saved with cumulative score")
+	_check(saved != null and saved.total_points() == 326 and saved.round_state.matches() == 1, "partial next level is saved with cumulative score")
 	_check(saved.round_state.identities == model.identities, "saved board retains exact positions")
 	# Change the preference in the middle of a real flip, while paused.
 	var reveal_index: int = 0
@@ -121,7 +121,7 @@ func run(screen: GameScreen) -> void:
 	_check(app.progress.reduced_motion and app.tiles[reveal_index].face_up and not app.tiles[reveal_index].flipping and app.tiles[reveal_index].scale == Vector2.ONE, "enabling reduced motion settles an in-flight flip to its intended face")
 	app._resume()
 	# Reach the peak board using the same model, then exercise its actual UI.
-	while app.progress.round_state.level < 4:
+	while app.progress.round_state.level < 5:
 		_clear_model(app.progress.round_state)
 		app.progress.advance()
 	app.progress.reduced_motion = true
@@ -238,7 +238,7 @@ func run(screen: GameScreen) -> void:
 	app.progress.reduced_motion = false
 	app.collection_panel.refresh()
 	var empty_theme: int = 0
-	while app.progress.collected.any(func(id: int) -> bool: return id / 6 == empty_theme):
+	while app.progress.collected.any(func(id: int) -> bool: return PeopleCatalog.theme_of(id) == empty_theme):
 		empty_theme += 1
 	app.collection_panel.filters.select(empty_theme + 1)
 	app.collection_panel.filters.item_selected.emit(empty_theme + 1)
@@ -299,7 +299,7 @@ func run(screen: GameScreen) -> void:
 	_check(app.progress.sound and app.audio.enabled and app.store.load_progress().sound, "sound can be enabled again and saved")
 	app._resume()
 	# Exercise the new peak with actual input and full 16-person celebration.
-	while app.progress.round_state.level < 8:
+	while app.progress.round_state.level < 9:
 		_clear_model(app.progress.round_state)
 		app.progress.advance()
 	app._checkpoint()
@@ -307,7 +307,7 @@ func run(screen: GameScreen) -> void:
 	await _wait_phase("preview")
 	await _capture("sixteen-preview")
 	await _wait_phase("playing")
-	_check(app.tiles.size() == 16, "level 8 reaches the expanded 16-card peak")
+	_check(app.tiles.size() == 16, "level 9 reaches the expanded 16-card peak")
 	for tile: PortraitTile in app.tiles:
 		_check(tile.size.x >= 88 and tile.size.y >= 88 and Rect2(Vector2.ZERO, app.board.size).encloses(tile.get_rect()), "16-card touch targets stay usable and inside the board")
 	await _capture("sixteen-board")
@@ -331,8 +331,8 @@ func run(screen: GameScreen) -> void:
 	await _escape()
 	# Reproduce the reported six-pair, 50% result at the retired surprise threshold.
 	app.progress = GameProgress.create(4815)
-	app.progress.round_state = MatchRound.create(4, 4815)
-	app.progress.banked_points = LevelGenerator.completed_pairs(3) * 120
+	app.progress.round_state = MatchRound.create(5, 4815)
+	app.progress.banked_points = LevelGenerator.completed_pairs(4) * 120
 	app.progress.discovery_steps = 2
 	_clear_model(app.progress.round_state)
 	app.progress.round_state.attempts = 12
@@ -343,6 +343,7 @@ func run(screen: GameScreen) -> void:
 	await _capture("fifty-percent-no-reward")
 	var restored_reward: GameProgress = app.store.load_progress()
 	_check(restored_reward != null and restored_reward.collected.is_empty() and restored_reward.choice_tokens == 0, "50 percent result persists without collection ownership")
+	await _test_plus_peek()
 	var layout_file: FileAccess = FileAccess.open("user://smoke-layout.json", FileAccess.WRITE)
 	layout_file.store_string(JSON.stringify(layout))
 	layout_file.close()
@@ -375,6 +376,9 @@ func _click(point: Vector2) -> void:
 		event.pressed = down
 		Input.parse_input_event(event)
 		await get_tree().process_frame
+
+	# Allow visibility/layout changes from the released button to settle.
+	await get_tree().create_timer(0.04).timeout
 
 func _check_cast(expected_count: int) -> void:
 	_check(app.cheer_lineup.people.size() == expected_count, "every tile's character returns, including both members of each pair")
@@ -420,3 +424,126 @@ func _capture(label: String) -> void:
 func _record_layout(key: String, control: Control) -> void:
 	var point: Vector2 = control.global_position + control.size / 2
 	layout[key] = [point.x, point.y]
+
+func _test_plus_peek() -> void:
+	app.billing.reset_simulation()
+	app.use_native_rewarded = false
+	app.progress = GameProgress.create(99303)
+	app._show_level()
+	await _wait_phase("playing")
+	_record_layout("peek", app.peek_button)
+	await _click(app.peek_button.global_position + app.peek_button.size / 2)
+	_check(app.peek_offer.visible and not app.progress.round_state.peek_earned, "free Peek opens an optional offer without granting or showing an ad")
+	_record_layout("watch_ad", app.peek_offer.watch)
+	await _capture("peek-offer")
+	app.ads.fail_load = true
+	await _click(app.peek_offer.watch.global_position + app.peek_offer.watch.size / 2)
+	await get_tree().create_timer(0.25).timeout
+	_check(not app.peek_offer.watch.disabled and not app.progress.round_state.peek_earned, "no-fill keeps retry and continued play available")
+	app.ads.fail_load = false
+	await _click(app.peek_offer.watch.global_position + app.peek_offer.watch.size / 2)
+	await get_tree().create_timer(0.25).timeout
+	_check(app.ad_overlay.visible and app.ads.rewarded_state == "showing", "explicit Watch opens the simulated rewarded placement")
+	_record_layout("earn_ad", app.test_reward_button)
+	app._dismiss_simulated_ad()
+	_check(not app.progress.round_state.peek_earned and not get_tree().paused, "closing without an earned callback grants no peek and returns to play")
+	await _click(app.peek_button.global_position + app.peek_button.size / 2)
+	await _click(app.peek_offer.watch.global_position + app.peek_offer.watch.size / 2)
+	await get_tree().create_timer(0.25).timeout
+	await _capture("test-ad")
+	await _click(app.test_reward_button.global_position + app.test_reward_button.size / 2)
+	_check(app.progress.round_state.peek_earned and not app.progress.round_state.peek_used and not get_tree().paused, "earned ad unlocks Ready without immediately revealing cards")
+	_check(app.tiles.all(func(tile: PortraitTile) -> bool: return not tile.face_up), "returning from the ad does not flash the cards")
+	_check(app.store.load_progress().round_state.peek_earned, "earned ad allowance survives restart")
+	await _tap(0)
+	await get_tree().create_timer(0.25).timeout
+	await _click(app.peek_button.global_position + app.peek_button.size / 2)
+	for _frame: int in range(180):
+		if app.peek_started_usec > 0:
+			break
+		await get_tree().process_frame
+	if app.peek_started_usec == 0:
+		_check(false, "peek did not become visible")
+		return
+	_check(app.tiles.all(func(tile: PortraitTile) -> bool: return tile.face_up), "Quick Peek reveals every remaining character")
+	await _capture("quick-peek")
+	await _wait_phase("peek_concealing")
+	var seconds: float = (Time.get_ticks_usec() - app.peek_started_usec) / 1000000.0
+	_check(seconds >= 0.48 and seconds < 0.70, "Quick Peek is fully face-up for half a second, excluding flips")
+	await _wait_phase("playing")
+	_check(app.progress.round_state.selected == [0] and app.tiles[0].face_up and app.progress.round_state.attempts == 0, "Peek preserves first selection without a comparison penalty")
+	_check(app.peek_button.disabled and app.store.load_progress().round_state.peek_used, "used peek persists and disables additional uses")
+	_clear_model(app.progress.round_state)
+	app._checkpoint()
+	app._show_level()
+	await _wait_phase("celebrating")
+	_check(app.progress.choice_tokens == 1, "peek-assisted perfect board earns its character choice")
+	app._open_collection(true)
+	app.collection_panel.filters.select(5)
+	app.collection_panel.filters.item_selected.emit(5)
+	await get_tree().process_frame
+	var locked: CollectionCard = app.collection_panel.entries[0] as CollectionCard
+	_check(locked.locked, "paid theme is visibly labeled as locked")
+	await _click(locked.global_position + locked.size / 2)
+	_check(app.upgrade_panel.visible and app.progress.choice_tokens == 1 and app.progress.collected.is_empty(), "locked character opens Plus without consuming a perfect choice")
+	_record_layout("buy_plus", app.upgrade_panel.buy)
+	_record_layout("restore_plus", app.upgrade_panel.restore_button)
+	await _capture("plus")
+	app.billing.outcome = "pending"
+	await _click(app.upgrade_panel.buy.global_position + app.upgrade_panel.buy.size / 2)
+	await get_tree().create_timer(0.25).timeout
+	_check(app.upgrade_panel.buy.disabled and not app.progress.plus_enabled, "pending test purchase leaves all paid benefits locked")
+	app.billing.complete_pending(false)
+	app.billing.outcome = "success"
+	await _click(app.upgrade_panel.buy.global_position + app.upgrade_panel.buy.size / 2)
+	await get_tree().create_timer(0.25).timeout
+	_check(app.progress.plus_enabled and app.ads.ad_free and app.native_ads.ad_free, "successful test purchase grants all Plus benefits together")
+	_check(app.progress.collected.is_empty() and app.progress.choice_tokens == 1, "purchase unlocks eligibility without auto-collecting characters")
+	app._close_upgrade()
+	await get_tree().process_frame
+	var unlocked: CollectionCard = app.collection_panel.entries[0] as CollectionCard
+	await _click(unlocked.global_position + unlocked.size / 2)
+	await _click(app.collection_panel.action.global_position + app.collection_panel.action.size / 2)
+	_check(app.progress.collected == [32] and app.progress.choice_tokens == 0, "player can explicitly collect an unlocked paid character")
+	await _capture("woodland-collected")
+	app._close_collection()
+	app._next_level()
+	await _wait_phase("playing")
+	await _click(app.peek_button.global_position + app.peek_button.size / 2)
+	await get_tree().create_timer(0.30).timeout
+	app._notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	_check(not app.board.visible and get_tree().paused, "backgrounding conceals the active peek")
+	await get_tree().create_timer(0.65).timeout
+	_check(app.progress.round_state.peeking, "background time does not consume the foreground reveal timer")
+	app._notification(Node.NOTIFICATION_APPLICATION_RESUMED)
+	await _wait_phase("playing")
+	_check(app.progress.round_state.peek_used and app.peek_button.disabled, "paid peek resumes once and cannot repeat")
+	# Exercise all new theme silhouettes at the actual sixteen-card size.
+	for theme_id: int in [4, 5, 6]:
+		app.progress.round_state = MatchRound.create(9, app.progress.seed_value, 4, theme_id, 1, PeopleCatalog.ALL_THEMES)
+		app.progress.banked_points = LevelGenerator.completed_pairs(8, 4) * 120
+		app._checkpoint()
+		app._show_level()
+		await _wait_phase("preview")
+		await _capture("plus-theme-%d-preview" % theme_id)
+		await _wait_phase("playing")
+		_check(app.tiles.size() == 16 and app.tiles.all(func(tile: PortraitTile) -> bool: return PeopleCatalog.theme_of(tile.variant) == theme_id), "paid theme shows eight distinct pairs at sixteen-card scale")
+		app._quick_peek()
+		await get_tree().create_timer(0.3).timeout
+		await _capture("plus-theme-%d-peek" % theme_id)
+		await _wait_phase("playing")
+		_clear_model(app.progress.round_state)
+		app._checkpoint()
+		app._show_level()
+		await _wait_phase("celebrating")
+		await get_tree().create_timer(1.45).timeout
+		await _capture("plus-theme-%d-cheer" % theme_id)
+	app.billing.reset_simulation()
+
+func run_plus_only(screen: GameScreen) -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	app = screen
+	await _wait_phase("playing")
+	await _test_plus_peek()
+	print("PLUS SMOKE PASSED" if failures == 0 else "PLUS SMOKE FAILED: %d" % failures)
+	get_tree().quit(0 if failures == 0 else 1)
