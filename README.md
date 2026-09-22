@@ -1,7 +1,7 @@
 # Mem-Mem — matching game
 
 A Godot 4.7.2 / GDScript Android portrait-matching game.
-Version **0.6.0 — Quick Peek** has 56 collectible characters across seven themes,
+Version **0.6.1 — Collection applause** has 56 collectible characters across seven themes,
 with distinct matching pairs and a 4–16-card difficulty rhythm. Hard boards lead
 immediately to four-card boards. The held completion, collection reactions, dark
 mode and four backgrounds remain part of the game.
@@ -119,7 +119,9 @@ uncollected character, then press **Collect** to spend one earned choice. The
 character is saved immediately. Duplicate selections cannot spend choices; a failed
 save retains the choice. Finishing a collection preserves extra choices for later.
 The result card opens Discover all directly. Tapping an eligible character selection
-triggers fireworks; confirming Collect celebrates only after the save succeeds.
+triggers fireworks and a short jump-and-clap animation. Confirming Collect repeats
+the celebration only after the save succeeds. The reaction uses dedicated clapping
+poses, stops when hidden or deselected, and respects Reduce motion.
 Tapping an owned character plays a short random dance or greeting with sound, without
 immediate repeats. Reactions never spend choices or change gameplay. Reduce motion
 uses still poses/captions and a fading sparkle; muted sound stays muted. Closing the

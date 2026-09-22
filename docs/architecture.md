@@ -110,7 +110,7 @@ but stops animations offscreen, when hidden, in the background, or with Reduce m
 Claims require an explicit Collect button after selection.
 
 `CollectionFireworks` is one reusable, input-transparent effect layer. Eligible card
-selection starts a preview burst without granting ownership; the successful saved
+selection starts a preview burst and a short jump-and-clap without granting ownership; the successful saved
 claim starts a second burst after the refreshed layout settles. Navigation cancels
 stale deferred celebrations, and save failures cannot trigger confirmation effects.
 `CollectionPerformer` uses the existing cutout art for three dances and two raised-arm
@@ -130,7 +130,7 @@ extra credits. The feature is local game progression, independent of paid owners
 
 `PeopleCatalog` defines 56 stable IDs. IDs 0–23 retain their old meaning. IDs
 24–31 add two characters to each original theme; IDs 32–55 are the new paid themes.
-Sixteen PNG atlases supply neutral and delighted poses. `AtlasRegions` preserves
+Twenty-four PNG atlases supply neutral, delighted and collection-clapping poses. `AtlasRegions` preserves
 original bounds; `ExpandedAtlas` contains measured alpha bounds for the new sheets.
 Explicit theme-member lists and artwork groups map stable IDs to atlas regions,
 portrait framing, and walk/hop/float profiles. They do not infer theme or atlas
@@ -207,3 +207,9 @@ Cancellation invalidates pending requests and cached ads. An explicit test permi
 allows Google's demo traffic; it is not a production UMP consent implementation.
 The UI returns to a Ready button after reward rather than automatically peeking.
 No ads or purchases are automatically shown during play.
+
+The selection-clap routine uses a continuous 2D mesh over a dedicated clapping pose,
+with repeated short jumps and subtle forearm pulses. Faces and silhouettes stay
+intact. Eligible unowned selections can run this routine while the game is paused;
+ordinary unowned cards remain still. Deselection, hiding, offscreen scrolling and
+backgrounding end it. Reduce motion keeps a still cheering pose and reaction caption.

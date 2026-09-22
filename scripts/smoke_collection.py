@@ -113,11 +113,13 @@ time.sleep(.4)
 previous_badge = badge(frame('owned-idle'))
 for index in range(5):
     tap_ui('first_character')
+    # adb input returns before the GLES frame necessarily presents on a cold emulator.
+    time.sleep(.12)
     current = frame(f'owned-tap-{index}')
     current_badge = badge(current)
     verify(not same(previous_badge, current_badge), 'owned tap gives a different reaction without an immediate repeat')
     previous_badge = current_badge
-    time.sleep(.23)
+    time.sleep(.32)
 verify(snapshot()['collected'] == before['collected'] and snapshot()['choice_tokens'] == before['choice_tokens'], 'owned taps cannot spend choices or change ownership')
 adb('shell', 'input', 'keyevent', '3')
 adb('shell', 'am', 'start', '-n', ACTIVITY)

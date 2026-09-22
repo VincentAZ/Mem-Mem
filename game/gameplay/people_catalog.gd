@@ -102,3 +102,12 @@ static func motion_profile(character: int) -> String:
 
 static func can_wave(character: int) -> bool:
 	return character_metadata(character).wave
+
+static func clap_region(character: int) -> Rect2:
+	return ClapAtlas.REGIONS[character]
+
+static func clap_atlas(character: int) -> Texture2D:
+	var path: String = "res://assets/characters/%s-clap.png" % character_metadata(character).atlas
+	if not _textures.has(path):
+		_textures[path] = load(path) as Texture2D
+	return _textures[path] as Texture2D

@@ -2,7 +2,7 @@
 
 ## Character artwork
 
-The sixteen PNG atlases in `game/assets/characters/` were generated for Mem-Mem using
+The twenty-four PNG atlases in `game/assets/characters/` were generated for Mem-Mem using
 the built-in `image_gen` tool and the imagegen skill. No user API key or CLI fallback
 was used. The original output files were copied unchanged, retaining their alpha.
 They are baked images; the game performs no inference and does not call a service.
@@ -11,6 +11,13 @@ Each of the seven themes now has eight full-body neutral figures and correspondi
 delighted/cheering figures. The original four sheets retain six each; the cast-expansion
 sheet adds two per original theme. Atlas regions are recorded in `game/presentation/atlas_regions.gd`.
 Portraits crop the shared art. Matching accessory overlays were removed in 0.6.0.
+Eight additional `*-clap.png` atlases provide a clapping pose for each of the 56
+characters. They were generated from the corresponding cheering sheets with the
+built-in image tool, copied unchanged with transparency, and are used only for
+collection selection/claim reactions. Prompts and source paths are in the
+`clapping_assets` section of the prompt record. `ClapAtlas` stores their measured
+bounds; `scripts/measure_character_atlases.py --clap --check` verifies them.
+
 New atlas bounds are measured without editing the PNGs by
 `scripts/measure_character_atlases.py`; results are in `ExpandedAtlas`. Named variants are fictional game characters.
 

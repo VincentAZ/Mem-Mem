@@ -186,6 +186,7 @@ func _pick(character: int) -> void:
 			audio.play_cue(&"dance" if kind < 3 else &"wave")
 	elif progress.choice_tokens > 0 and Time.get_ticks_msec() - last_selection_msec >= 200:
 		last_selection_msec = Time.get_ticks_msec()
+		picked.celebrate_selection()
 		_burst_at(picked)
 
 func _burst_at(card: CollectionCard, confirmed: bool = false) -> void:
@@ -201,6 +202,7 @@ func celebrate_claim(character: int) -> void:
 		return
 	for entry: CollectionCard in entries:
 		if entry.character == character and entry.owned:
+			entry.celebrate_selection()
 			_burst_at(entry, true)
 			return
 

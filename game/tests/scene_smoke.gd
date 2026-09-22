@@ -163,9 +163,9 @@ func run(screen: GameScreen) -> void:
 	_check(app.collection_panel.visible and get_tree().paused, "completion opens the collection while pausing cheers")
 	await _capture("collection")
 	# Pick from the first row through the actual card button, then confirm.
-	var pick: Button = app.collection_panel.entries[0]
+	var pick: CollectionCard = app.collection_panel.entries[0] as CollectionCard
 	if app.progress.collected.has(int(pick.get_meta("character"))):
-		pick = app.collection_panel.entries[1]
+		pick = app.collection_panel.entries[1] as CollectionCard
 	_record_layout("first_character", app.collection_panel.entries[0])
 	_record_layout("second_character", app.collection_panel.entries[1])
 	_record_layout("discover", app.collection_panel.discover)
@@ -174,9 +174,11 @@ func run(screen: GameScreen) -> void:
 	var chosen: int = int(pick.get_meta("character"))
 	await _click(pick.global_position + pick.size * 0.5)
 	_check(not app.collection_panel.action.disabled, "selecting an uncollected character enables the claim")
+	_check(pick.person.reaction == CollectionPerformer.JUMP_CLAP and not pick.person.reduced_motion, "eligible unowned selection starts jump-and-clap while gameplay is paused")
 	_check(not app.collection_panel.fireworks.origins.is_empty() and collection_cues.back() == &"fireworks", "tapping an eligible selection bursts fireworks with sound while gameplay stays paused")
 	_check(not app.progress.collected.has(chosen) and app.progress.choice_tokens == credits_before, "selection fireworks do not collect or spend a choice before confirmation")
 	await get_tree().create_timer(0.22).timeout
+	_check(pick.person.reaction_age > 0.15, "unowned selection animation advances instead of being stopped by the ownership gate")
 	await _capture("selection-fireworks")
 	await _click(app.collection_panel.action.global_position + app.collection_panel.action.size * 0.5)
 	_check(app.progress.collected.has(chosen) and app.progress.choice_tokens == credits_before - 1, "confirmed choice collects the selected character once")
@@ -184,6 +186,8 @@ func run(screen: GameScreen) -> void:
 	_check(claimed_save.collected == app.progress.collected and claimed_save.choice_tokens == app.progress.choice_tokens, "collection ownership and remaining choices persist together")
 	await get_tree().create_timer(0.20).timeout
 	_check(app.collection_panel.fireworks.origins.size() == 3, "successful saved claim has a confirmation burst")
+	var confirmed_card: CollectionCard = app.collection_panel.entries.filter(func(card: CollectionCard) -> bool: return card.character == chosen)[0]
+	_check(confirmed_card.person.reaction == CollectionPerformer.JUMP_CLAP, "successful explicit claim repeats jump-and-clap")
 	await _capture("collected")
 	await _click(app.collection_panel.mine.global_position + app.collection_panel.mine.size * 0.5)
 	_check(app.collection_panel.owned_only and app.collection_panel.entries.size() == app.progress.collected.size(), "My collection shows only owned characters")

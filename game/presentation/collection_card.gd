@@ -7,6 +7,8 @@ var locked: bool = false
 var selected: bool = false:
 	set(value):
 		selected = value
+		if not value and person != null and person.reaction == CollectionPerformer.JUMP_CLAP:
+			stop_feedback()
 		queue_redraw()
 var reduced_motion: bool = false
 var animation_active: bool = false
@@ -64,11 +66,22 @@ func react(kind: int) -> bool:
 		person.perform(kind)
 	return true
 
+func celebrate_selection() -> void:
+	if not animation_active or locked:
+		return
+	feedback_left = CollectionPerformer.DURATION
+	badge.text = "PICK ME!" if not owned else "COLLECTED!"
+	person.cheering = true
+	if not reduced_motion:
+		person.reduced_motion = false
+		person.perform(CollectionPerformer.JUMP_CLAP)
+
 func stop_feedback() -> void:
 	feedback_left = 0.0
 	tap_cooldown = 0.0
 	if person != null:
 		person.stop_reaction()
+		person.cheering = owned
 	if badge != null:
 		badge.text = "COLLECTED" if owned else "PLUS THEME" if locked else "TO DISCOVER"
 
@@ -81,7 +94,7 @@ func _process(delta: float) -> void:
 	# The panel runs while gameplay is paused. Backgrounding and Reduce motion
 	# explicitly suppress these cosmetic animations; scrolled-off cards stop too.
 	var viewport_rect: Rect2 = (get_parent().get_parent() as Control).get_global_rect()
-	var moving: bool = owned and animation_active and not reduced_motion and is_visible_in_tree() and viewport_rect.intersects(get_global_rect())
+	var moving: bool = (owned or person.reaction == CollectionPerformer.JUMP_CLAP) and animation_active and not reduced_motion and is_visible_in_tree() and viewport_rect.intersects(get_global_rect())
 	if not moving and person.reaction >= 0:
 		stop_feedback()
 	if person.reduced_motion == moving:
