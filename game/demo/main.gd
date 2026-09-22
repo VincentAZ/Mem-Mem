@@ -524,7 +524,7 @@ func _present_completion(play_sound: bool = false) -> void:
 	completion_detail.text = "%d pairs · %d%% accuracy\n+%d accuracy bonus" % [model.matches(), roundi(model.accuracy() * 100), model.bonus()]
 	if model.accuracy() == 1.0:
 		completion_detail.text += "\n1 character choice earned"
-	collect_reward_button.text = "Use saved choice · %d available" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 56" % progress.collected.size()
+	collect_reward_button.text = "Choose a character · %d saved" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 56" % progress.collected.size()
 	_update_hud(false)
 	completion.modulate.a = 0.0
 	completion.show()
@@ -970,7 +970,7 @@ func _close_collection() -> void:
 	_sync_pause()
 	_update_hud(false)
 	if phase == "celebrating":
-		collect_reward_button.text = "Use saved choice · %d available" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 56" % progress.collected.size()
+		collect_reward_button.text = "Choose a character · %d saved" % progress.choice_tokens if progress.choice_tokens > 0 else "View collection · %d / 56" % progress.collected.size()
 
 func _collect_character(character: int) -> void:
 	var before: Dictionary = progress.snapshot()

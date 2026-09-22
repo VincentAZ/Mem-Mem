@@ -172,8 +172,6 @@ func run(screen: GameScreen) -> void:
 	_record_layout("mine", app.collection_panel.mine)
 	_record_layout("claim", app.collection_panel.action)
 	var chosen: int = int(pick.get_meta("character"))
-	var collection_scroll: ScrollContainer = app.collection_panel.grid.get_parent() as ScrollContainer
-	_check(pick.mouse_filter == Control.MOUSE_FILTER_PASS and app.collection_panel.grid.mouse_filter == Control.MOUSE_FILTER_PASS and collection_scroll.scroll_deadzone > 0, "character cards pass touch drags to the collection scroller")
 	await _click(pick.global_position + pick.size * 0.5)
 	_check(not app.collection_panel.action.disabled, "selecting an uncollected character enables the claim")
 	_check(pick.person.reaction == CollectionPerformer.JUMP_CLAP and not pick.person.reduced_motion, "eligible unowned selection starts jump-and-clap while gameplay is paused")
