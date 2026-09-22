@@ -81,8 +81,11 @@ func _ready() -> void:
 	var scroll: ScrollContainer = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	# Finger drags start on the cards. A small deadzone still lets a tap select one.
+	scroll.scroll_deadzone = 16
 	column.add_child(scroll)
 	grid = GridContainer.new()
+	grid.mouse_filter = Control.MOUSE_FILTER_PASS
 	grid.columns = 3
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 9)

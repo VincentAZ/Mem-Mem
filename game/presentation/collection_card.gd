@@ -21,6 +21,8 @@ var tap_cooldown: float = 0.0
 func _ready() -> void:
 	flat = true
 	clip_contents = true
+	# Pass drags up to the collection scroller; Stop would keep the list scrollbar-only.
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	custom_minimum_size = Vector2(0, 212)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
