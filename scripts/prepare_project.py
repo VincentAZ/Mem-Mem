@@ -3,6 +3,7 @@
 from pathlib import Path
 import shutil
 import zipfile
+from prepare_consent import install as install_consent
 
 ROOT = Path(__file__).resolve().parent.parent
 TOOLS = ROOT / '.tools'
@@ -39,3 +40,4 @@ config.mkdir(parents=True, exist_ok=True)
     'export/android/shutdown_adb_on_exit = false\n'
 )
 print('Pinned addons and Android Gradle template installed.')
+install_consent()

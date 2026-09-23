@@ -23,6 +23,11 @@ Android platform-tools and the optional emulator are SDK-managed development
 utilities. They are not linked into the app. The optional test image is Google
 APIs Android 35 x86_64, and is not a Play Store purchase-testing environment.
 
-Debug builds use Google demo ad IDs only, plus the developer lab. A production
-build must remove the lab, replace the fake ownership flow, complete live store
-verification, and retain required third-party attribution.
+The tracked Android consent extension explicitly pins UMP 3.2.0, matching the
+installed ad SDK's transitive dependency. It compiles into Godot's generated Gradle
+project; no third-party plugin binary is modified. Node.js 22+ runs the verifier
+and server tests using only built-in modules (no npm dependencies).
+
+Debug builds use Google demo ad IDs and the developer lab. The isolated store export
+selects native billing, signed verification and UMP, hides the lab, and requires real
+configuration. Live store validation and third-party attribution remain launch work.

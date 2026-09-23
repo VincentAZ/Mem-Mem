@@ -14,6 +14,8 @@ with zipfile.ZipFile(apk) as archive:
         b'Lorg/godotengine/plugin/admob/AdmobPlugin;',
         b'Lcom/android/billingclient/api/BillingClient;',
         b'Lcom/google/android/gms/ads/MobileAds;',
+        b'Lio/github/vincentaz/memmem/MemMemConsent;',
+        b'Lcom/google/android/ump/UserMessagingPlatform;',
     ):
         if name not in dex:
             raise SystemExit('Native class absent from APK: ' + name.decode())
@@ -41,4 +43,3 @@ with zipfile.ZipFile(apk) as archive:
     if not any('x86_64/libgodot_android.so' in x['library'] for x in libraries):
         raise SystemExit('x86_64 Godot library missing')
 print(json.dumps({'apk': str(apk), 'native_plugins': 'present', 'libraries': libraries}, indent=2))
-

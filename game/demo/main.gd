@@ -41,7 +41,10 @@ var log_label: Label
 var lab_state: Label
 var ad_overlay: PanelContainer
 var logs: Array[String] = []
-var billing: SimulatedBilling = SimulatedBilling.new()
+var billing = SimulatedBilling.new()
+var monetization: MonetizationConfig = MonetizationConfig.new()
+var privacy_button: Button
+var waiting_for_consent: bool = false
 var ads: SimulatedAds = SimulatedAds.new()
 var consent: SimulatedConsent = SimulatedConsent.new()
 var native_billing: NativeBilling = NativeBilling.new()
@@ -78,7 +81,15 @@ var themed_panels: Array[PanelContainer] = []
 func _ready() -> void:
 	get_tree().auto_accept_quit = false
 	get_tree().quit_on_go_back = false
-	smoke_mode = OS.get_cmdline_user_args().has("--smoke") or OS.get_cmdline_user_args().has("--smoke-plus")
+	smoke_mode = monetization.development_enabled() and (OS.get_cmdline_user_args().has("--smoke") or OS.get_cmdline_user_args().has("--smoke-plus"))
+	if not monetization.development_enabled():
+		billing.free()
+		billing = native_billing if monetization.production else BillingService.new()
+		use_native_rewarded = monetization.production
+	native_billing.config = monetization
+	bridge.config = monetization
+	native_consent.production = monetization.production
+	native_consent.under_age_of_consent = monetization.under_age_of_consent
 	if smoke_mode:
 		store.prefix = "user://smoke_progress"
 		billing.save_path = "user://smoke_ownership.json"
@@ -99,7 +110,8 @@ func _ready() -> void:
 	_build_theme()
 	_build_game()
 	_build_pause()
-	_build_lab()
+	if monetization.development_enabled():
+		_build_lab()
 	_build_ad_overlay()
 	collection_panel = CollectionPanel.new()
 	add_child(collection_panel)
@@ -686,19 +698,26 @@ func _build_pause() -> void:
 	column.add_child(rules)
 	column.add_child(_button("Your collection", _open_collection))
 	column.add_child(_button("Mem-Mem Plus · themes & peeks", _open_upgrade))
-	column.add_child(_button("Restore purchase · test", billing.restore))
-	var rewarded_mode: CheckButton = CheckButton.new()
-	rewarded_mode.text = "Use simulated rewarded ads (testing)"
-	rewarded_mode.button_pressed = not use_native_rewarded
-	rewarded_mode.toggled.connect(func(value: bool) -> void:
-		ads.cancel_rewarded()
-		native_ads.cancel_rewarded()
-		use_native_rewarded = not value and OS.get_name() == "Android"
-	)
-	column.add_child(rewarded_mode)
-	var development: Button = _button("Development service lab", _open_lab)
-	development.add_theme_font_size_override("font_size", 12)
-	column.add_child(development)
+	column.add_child(_button("Restore purchase · test" if monetization.development_enabled() else "Restore purchase", billing.restore))
+	if monetization.production:
+		privacy_button = _button("Privacy choices", native_consent.show_privacy_options)
+		privacy_button.hide()
+		column.add_child(privacy_button)
+		if monetization.privacy_url.begins_with("https://"):
+			column.add_child(_button("Privacy policy", func() -> void: OS.shell_open(monetization.privacy_url)))
+	if monetization.development_enabled():
+		var rewarded_mode: CheckButton = CheckButton.new()
+		rewarded_mode.text = "Use simulated rewarded ads (testing)"
+		rewarded_mode.button_pressed = not use_native_rewarded
+		rewarded_mode.toggled.connect(func(value: bool) -> void:
+			ads.cancel_rewarded()
+			native_ads.cancel_rewarded()
+			use_native_rewarded = not value and OS.get_name() == "Android"
+		)
+		column.add_child(rewarded_mode)
+		var development: Button = _button("Development service lab", _open_lab)
+		development.add_theme_font_size_override("font_size", 12)
+		column.add_child(development)
 	pause_menu.hide()
 
 func _settings_section(parent: VBoxContainer, caption: String) -> VBoxContainer:
@@ -732,7 +751,7 @@ func _resume() -> void:
 	if ad_overlay.visible:
 		_dismiss_simulated_ad()
 		return
-	if lab.visible:
+	if lab != null and lab.visible:
 		_close_lab()
 		return
 	user_paused = false
@@ -740,6 +759,8 @@ func _resume() -> void:
 	_sync_pause()
 
 func _open_lab() -> void:
+	if not monetization.development_enabled():
+		return
 	lab.show()
 	_sync_pause()
 
@@ -772,6 +793,8 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_APPLICATION_RESUMED:
 		backgrounded = false
 		_sync_pause()
+		if monetization.production:
+			native_billing.restore()
 	elif what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		if get_tree().paused:
 			_resume()
@@ -789,7 +812,8 @@ func _centered_label(value: String, font_size: int) -> Label:
 func _connect_services() -> void:
 	for service: Node in [billing, ads, consent, native_billing, bridge, native_ads, native_consent]:
 		service.process_mode = Node.PROCESS_MODE_ALWAYS
-		add_child(service)
+		if service.get_parent() == null:
+			add_child(service)
 	native_ads.bridge = bridge
 	native_consent.bridge = bridge
 	billing.entitlement_changed.connect(_plus_changed)
@@ -798,16 +822,26 @@ func _connect_services() -> void:
 	billing.entitlement_changed.connect(native_ads.set_ad_free)
 	consent.permission_changed.connect(ads.set_consent_allowed)
 	native_consent.permission_changed.connect(native_ads.set_consent_allowed)
+	native_consent.state_changed.connect(_privacy_updated)
 	for service: Node in [billing, ads, consent, native_billing, native_ads, native_consent]:
-		service.connect("state_changed", _service_event)
+		if not service.is_connected("state_changed", _service_event):
+			service.connect("state_changed", _service_event)
 	ads.state_changed.connect(_simulated_ad_event)
 	for provider: AdsService in [ads, native_ads]:
 		provider.reward_earned.connect(_peek_reward_earned)
 		provider.rewarded_state_changed.connect(_rewarded_event.bind(provider))
-	billing.restore()
-	consent.request_update()
+	if monetization.production:
+		native_billing.initialize()
+		if monetization.audience_configured:
+			native_consent.request_update()
+	else:
+		billing.restore()
+		if monetization.development_enabled():
+			consent.request_update()
 
 func _service_event(state: String, detail: String) -> void:
+	if not monetization.development_enabled():
+		return
 	logs.push_front("%s · %s" % [state.to_upper(), detail])
 	if logs.size() > 6:
 		logs.resize(6)
@@ -1004,7 +1038,8 @@ func _apply_palette() -> void:
 	progress_bar.add_theme_stylebox_override("background", GameStyle.surface(GamePalette.panel, 3, 0))
 	progress_bar.add_theme_stylebox_override("fill", GameStyle.surface(GameStyle.primary(), 3, 0))
 	for overlay: PanelContainer in [pause_menu, lab, ad_overlay]:
-		overlay.add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.background, 0, 0))
+		if overlay != null:
+			overlay.add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.background, 0, 0))
 	for panel: PanelContainer in themed_panels:
 		panel.add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.panel, 18, 14))
 	for button: Button in [next_level_button, collection_button, settings_button, collect_reward_button]:
@@ -1033,6 +1068,8 @@ func _build_monetization() -> void:
 	upgrade_panel.closed.connect(_close_upgrade)
 	upgrade_panel.purchase_requested.connect(func() -> void: billing.purchase())
 	upgrade_panel.restore_requested.connect(billing.restore)
+	upgrade_panel.access_requested.connect(billing.redeem_access)
+	upgrade_panel.access_clear_requested.connect(billing.clear_access)
 	peek_offer = PeekOffer.new()
 	add_child(peek_offer)
 	peek_offer.closed.connect(_close_peek_offer)
@@ -1045,6 +1082,8 @@ func _build_monetization() -> void:
 	)
 
 func _open_upgrade() -> void:
+	if monetization.production and not native_billing.product_available:
+		native_billing.restore()
 	upgrade_panel.refresh(billing)
 	upgrade_panel.show()
 	_sync_pause()
@@ -1083,7 +1122,7 @@ func _quick_peek() -> void:
 	if model.can_peek(billing.has_plus()):
 		_run_peek()
 	else:
-		peek_offer.open(use_native_rewarded)
+		peek_offer.open(use_native_rewarded, monetization.production)
 		_sync_pause()
 
 func _run_peek() -> void:
@@ -1130,19 +1169,32 @@ func _reward_provider() -> AdsService:
 func _watch_peek_ad() -> void:
 	if not peek_offer.visible or billing.has_plus() or progress.round_state.peek_earned or progress.round_state.peek_used:
 		return
-	# Explicit test permission; no production UMP or production ad IDs are enabled.
 	var provider: AdsService = _reward_provider()
-	provider.set_consent_allowed(true)
+	if monetization.production:
+		if not monetization.ads_enabled():
+			peek_offer.detail.text = "Ads are unavailable. You can keep playing."
+			return
+		if not native_consent.can_request_ads:
+			waiting_for_consent = true
+			peek_offer.watch.disabled = true
+			peek_offer.detail.text = "Checking privacy choices…"
+			native_consent.request_update()
+			return
+	elif monetization.development_enabled():
+		provider.set_consent_allowed(true)
+	else:
+		return
 	peek_offer.watch.disabled = true
 	provider.load_rewarded(progress.round_state.board_key())
 	var request: String = provider.reward_request
 	await get_tree().create_timer(25.0).timeout
 	if request == provider.reward_request and provider.rewarded_state in ["loading", "initializing"]:
 		provider.cancel_rewarded()
-		peek_offer.detail.text = "The test ad timed out. Keep playing or try again."
+		peek_offer.detail.text = "The ad timed out. Keep playing or try again."
 		peek_offer.watch.disabled = false
 
 func _close_peek_offer() -> void:
+	waiting_for_consent = false
 	peek_offer.hide()
 	ads.cancel_rewarded()
 	native_ads.cancel_rewarded()
@@ -1181,3 +1233,20 @@ func _dismiss_simulated_ad() -> void:
 		ads.dismiss_rewarded()
 	else:
 		ads.dismiss()
+
+func _privacy_updated(state: String, detail: String) -> void:
+	if not monetization.production:
+		return
+	if privacy_button != null:
+		privacy_button.visible = native_consent.privacy_options_required
+		privacy_button.disabled = state in ["updating", "showing"]
+	if not waiting_for_consent or state in ["updating", "showing"]:
+		return
+	waiting_for_consent = false
+	if not peek_offer.visible:
+		return
+	peek_offer.watch.disabled = false
+	if native_consent.can_request_ads and not backgrounded:
+		_watch_peek_ad.call_deferred()
+	else:
+		peek_offer.detail.text = detail + " Keep playing or try again."

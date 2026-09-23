@@ -7,8 +7,14 @@ var progress: GameProgress
 var selected: int = -1
 var filter_theme: int = -1
 var owned_only: bool = true
+const DRAG_DEADZONE := 16
+var scroll: ScrollContainer
 var grid: GridContainer
 var summary: Label
+var drag_tracking: bool = false
+var drag_scrolling: bool = false
+var drag_origin: Vector2 = Vector2.ZERO
+var drag_scroll_origin: int = 0
 var tally: Label
 var empty: Label
 var action: Button
@@ -78,12 +84,16 @@ func _ready() -> void:
 		refresh()
 	)
 	column.add_child(filters)
-	var scroll: ScrollContainer = ScrollContainer.new()
+	# Cards are buttons, which stop pointer events. Pass lets a touch drag reach this
+	# scroller; the deadzone keeps a short tap as a character selection.
+	scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = DRAG_DEADZONE
 	column.add_child(scroll)
 	grid = GridContainer.new()
 	grid.columns = 3
+	grid.mouse_filter = Control.MOUSE_FILTER_PASS
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 9)
 	grid.add_theme_constant_override("v_separation", 12)
@@ -155,7 +165,7 @@ func refresh() -> void:
 		grid.add_child(entry)
 		entries.append(entry)
 	empty.visible = entries.is_empty()
-	(grid.get_parent() as ScrollContainer).visible = not entries.is_empty()
+	scroll.visible = not entries.is_empty()
 	empty.text = "Your collection starts here.\nFinish a board with 100% accuracy,\nthen choose a character from an unlocked theme." if progress.collected.is_empty() else "No collected characters in this theme yet.\nTry Discover all."
 	_update_action()
 	_sync_animation()
@@ -233,6 +243,52 @@ func _sync_animation() -> void:
 		if not entry.animation_active:
 			entry.stop_feedback()
 			entry.person.reduced_motion = true
+
+func _input(event: InputEvent) -> void:
+	# Touchscreens drag-scroll through ScrollContainer once children pass events.
+	# Pointer drags need the same gesture where no touchscreen is reported.
+	if DisplayServer.is_touchscreen_available() or scroll == null:
+		return
+	if not visible or not scroll.visible:
+		drag_tracking = false
+		drag_scrolling = false
+		return
+	if event is InputEventMouseButton:
+		var button: InputEventMouseButton = event as InputEventMouseButton
+		if button.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if button.pressed:
+			drag_tracking = false
+			drag_scrolling = false
+			if not _can_drag_from(button.position):
+				return
+			drag_tracking = true
+			drag_origin = button.position
+			drag_scroll_origin = scroll.scroll_vertical
+		else:
+			drag_tracking = false
+			drag_scrolling = false
+	elif event is InputEventMouseMotion and drag_tracking:
+		var motion: InputEventMouseMotion = event as InputEventMouseMotion
+		if (motion.button_mask & MOUSE_BUTTON_MASK_LEFT) == 0:
+			return
+		var traveled: float = motion.position.y - drag_origin.y
+		if absf(traveled) < float(DRAG_DEADZONE):
+			return
+		if not drag_scrolling:
+			drag_scrolling = true
+			scroll.propagate_notification(Control.NOTIFICATION_SCROLL_BEGIN)
+		var slop: float = signf(traveled) * float(DRAG_DEADZONE)
+		scroll.scroll_vertical = drag_scroll_origin - int(traveled - slop)
+		get_viewport().set_input_as_handled()
+
+func _can_drag_from(point: Vector2) -> bool:
+	if not scroll.get_global_rect().has_point(point):
+		return false
+	var bar: VScrollBar = scroll.get_v_scroll_bar()
+	if bar.visible and bar.get_global_rect().has_point(point):
+		return false
+	return bar.max_value > bar.page
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if visible and event.is_action_pressed("ui_cancel"):

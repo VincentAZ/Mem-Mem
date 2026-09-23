@@ -20,13 +20,13 @@ characters to earn, not automatic collection ownership.
 **This is a development build.** Purchases and restoration are labeled simulations;
 no money is charged. Android uses Google's rewarded test ads; desktop has an
 explicit simulated Earn reward button. Settings can select simulated rewarded ads
-on Android for offline testing. Real purchases and production consent/ads remain
-pending store setup. The intended later price is $3.99; there is no automatic price
+on Android for offline testing. Production billing, server verification and UMP consent are implemented behind a
+separate store export; live purchases and ads still require account setup and testing. The intended later price is $3.99; there is no automatic price
 change or fictitious crossed-out price.
 
 ## Run it
 
-On Linux x86_64, install Python 3.12+, `curl`, `ripgrep`, and standard OpenGL runtime libraries, then:
+On Linux x86_64, install Python 3.12+, Node.js 22+, `curl`, `ripgrep`, and standard OpenGL runtime libraries, then:
 
 ```bash
 ./scripts/setup.sh
@@ -103,7 +103,7 @@ behavior; live purchases need a Play-enabled device and configured store account
   Sound & Motion, and the next-board cast. The top pause button, Escape and Android
   Back open the same screen. Back to game / Escape / Android Back returns to play.
 - **Settings → Development service lab** retains the simulated and native SDK checks.
-  Real-money purchases remain disabled; native ads only use Google's demo IDs.
+  Debug purchases remain simulated; debug native ads use Google's demo IDs.
 - Rule, persistence, service, and rendered interaction tests.
 
 Character art uses generated, transparent PNG atlases with normal adult proportions.
@@ -136,7 +136,30 @@ Older saves retain pair positions, progress, collection and score. Duplicate leg
 variants become distinct unused characters in the same theme. After that board, the
 easier sequence begins with four cards. Historical score validation keeps the
 correct generation boundaries. There is no runtime AI model, live image generation,
-analytics, or production purchase backend. Real-money purchasing stays disabled.
+analytics or app account system. The purchase-verification service in `server/` must
+be deployed before enabling a store release. Debug purchasing stays simulated.
+
+## Production monetization
+
+The agreed offer is **$1.99 once for Mem-Mem Plus**, with optional rewarded ads for
+free Quick Peeks. The production path now includes localized Play product details,
+verified non-consumable purchases and acknowledgement, restoration, signed offline
+entitlements, UMP consent and privacy choices, and an isolated signed AAB export.
+The store UI contains no development lab or simulated-purchase controls.
+
+**Not launched:** Play Console and AdMob accounts, the deployed verifier, upload key,
+audience settings, privacy policy and live internal-track validation are still needed.
+Follow [store setup](docs/store-setup.md). The example intentionally fails preflight
+until real configuration is supplied:
+
+```bash
+./scripts/build_store.sh .tools/store/config.json --check
+./scripts/build_store.sh .tools/store/config.json
+```
+
+The backend uses Node 22+ with no npm dependencies. Plus can work offline for up to
+seven days after verification; refunds are applied on recheck or receipt expiry.
+See the store guide for the precise recovery and revocation behavior.
 
 ## Test
 
@@ -181,7 +204,9 @@ and [store setup](docs/store-setup.md) for the remaining device/store checks.
 - `game/assets/people/`: archived vector art, excluded from Android export.
 - `game/services/`: common interfaces, simulations, and isolated native adapters.
 - `game/tests/`: deterministic round and service-scenario checks.
-- `scripts/`: pinned downloads, local setup, builds, and validation commands.
+- `server/`: Play verification, acknowledgement and signed entitlement receipts.
+- `android/consent/`: the native UMP permission and privacy-options extension.
+- `scripts/`: pinned downloads, local setup, debug/store builds, and validation commands.
 
 Downloaded addons, SDKs, build artifacts, signing keys, and runtime saves are
 ignored by Git. Original third-party license notices remain in downloaded packages.

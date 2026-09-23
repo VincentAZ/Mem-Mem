@@ -46,10 +46,14 @@ func _ready() -> void:
 	content.add_child(close)
 	hide()
 
-func open(use_native: bool) -> void:
+func open(use_native: bool, production: bool = false) -> void:
 	native_test = use_native
 	add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.background, 0, 0))
 	GameStyle.skin_button(watch, true)
 	detail.text = "GOOGLE TEST AD · Allows test-ad requests only." if native_test else "SIMULATED AD · No network request."
+	watch.text = "Allow & watch test ad"
+	if production:
+		detail.text = "Complete an ad to earn your peek. Closing early won't use a peek."
+		watch.text = "Watch ad"
 	watch.disabled = false
 	show()

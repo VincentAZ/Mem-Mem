@@ -9,6 +9,7 @@ const PLUS_TITLE: String = "Mem-Mem Plus"
 const INTRO_PRICE_USD: String = "$1.99"
 var product_price: String = ""
 var simulated: bool = false
+var product_available: bool = false
 
 var ad_free: bool = false
 var state: String = "idle"
@@ -19,6 +20,15 @@ func purchase(_product_id: String = REMOVE_ADS) -> void:
 
 func restore() -> void:
 	_report("unavailable", "Restoration is unavailable.")
+
+func redeem_access(_code: String) -> void:
+	_report("unavailable", "Access codes require the store version.")
+
+func clear_access() -> void:
+	pass
+
+func can_purchase() -> bool:
+	return product_available and not ad_free and not state in ["connecting", "purchasing", "pending", "restoring", "verifying", "access_verifying"]
 
 func _report(value: String, description: String) -> void:
 	state = value

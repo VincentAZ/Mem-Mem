@@ -32,6 +32,15 @@ func run(screen: GameScreen) -> void:
 	await _capture("empty-collection")
 	await _click(app.collection_panel.discover.global_position + app.collection_panel.discover.size * 0.5)
 	_check(app.collection_panel.entries.size() == PeopleCatalog.COUNT and app.collection_panel.action.disabled, "Discover all exposes the full catalog without claiming unearned characters")
+	_check(app.collection_panel.entries[0].mouse_filter == Control.MOUSE_FILTER_PASS and app.collection_panel.grid.mouse_filter == Control.MOUSE_FILTER_PASS, "character cards pass touch drags through to the collection scroller")
+	_check(app.collection_panel.scroll.scroll_deadzone >= 8, "collection touch scrolling keeps a tap deadzone")
+	var start_scroll: int = app.collection_panel.scroll.scroll_vertical
+	var drag_from: Vector2 = app.collection_panel.scroll.global_position + Vector2(36, app.collection_panel.scroll.size.y * 0.5)
+	await _drag(drag_from, drag_from + Vector2(0, -220))
+	_check(app.collection_panel.scroll.scroll_vertical > start_scroll + 40, "dragging a character scrolls the collection without using the scrollbar")
+	_check(app.collection_panel.selected == -1 and app.collection_panel.fireworks.origins.is_empty(), "a drag does not select the character under the finger")
+	app.collection_panel.scroll.scroll_vertical = 0
+	await get_tree().process_frame
 	await _click(app.collection_panel.entries[0].global_position + app.collection_panel.entries[0].size * 0.5)
 	_check(app.collection_panel.fireworks.origins.is_empty() and collection_cues.is_empty(), "browsing without an earned choice does not celebrate a nonexistent reward")
 	await _capture("discover")
@@ -368,6 +377,34 @@ func _clear_model(model: MatchRound) -> void:
 func _tap(index: int) -> void:
 	var point: Vector2 = app.tiles[index].global_position + app.tiles[index].size * 0.5
 	await _click(point)
+
+func _drag(from: Vector2, to: Vector2) -> void:
+	var press: InputEventMouseButton = InputEventMouseButton.new()
+	press.position = from
+	press.global_position = from
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	Input.parse_input_event(press)
+	await get_tree().process_frame
+	var previous: Vector2 = from
+	const STEPS := 8
+	for step: int in STEPS:
+		var point: Vector2 = from.lerp(to, float(step + 1) / float(STEPS))
+		var motion: InputEventMouseMotion = InputEventMouseMotion.new()
+		motion.position = point
+		motion.global_position = point
+		motion.relative = point - previous
+		motion.button_mask = MOUSE_BUTTON_MASK_LEFT
+		Input.parse_input_event(motion)
+		previous = point
+		await get_tree().process_frame
+	var release: InputEventMouseButton = InputEventMouseButton.new()
+	release.position = to
+	release.global_position = to
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.pressed = false
+	Input.parse_input_event(release)
+	await get_tree().process_frame
 
 func _click(point: Vector2) -> void:
 	var motion: InputEventMouseMotion = InputEventMouseMotion.new()

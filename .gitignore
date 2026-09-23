@@ -5,6 +5,9 @@ game/android/build/
 game/android/.build_version
 game/addons/
 game/export_credentials.cfg
+game/monetization.cfg
+*.private.pem
+*-private.pem
 *.keystore
 *.jks
 *.log
@@ -12,4 +15,3 @@ __pycache__/
 .env
 .env.*
 !.env.example
-

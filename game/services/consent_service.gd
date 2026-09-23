@@ -7,6 +7,10 @@ var state: String = "unknown"
 var detail: String = "Not checked."
 var can_request_ads: bool = false
 var form_available: bool = false
+var privacy_options_required: bool = false
+
+func show_privacy_options() -> void:
+	show_form()
 
 func request_update() -> void:
 	_set_state("unavailable", "Consent service is unavailable.", false)
@@ -20,4 +24,3 @@ func _set_state(value: String, description: String, allowed: bool) -> void:
 	can_request_ads = allowed
 	permission_changed.emit(allowed)
 	state_changed.emit(state, detail)
-

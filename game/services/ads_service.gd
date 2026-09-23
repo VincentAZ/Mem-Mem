@@ -59,7 +59,7 @@ func cancel_rewarded() -> void:
 	var had_request: bool = not reward_request.is_empty()
 	reward_request = ""
 	if had_request:
-		_reward_report("cancelled", "Test-ad request closed. Gameplay continues.")
+		_reward_report("cancelled", "Ad request closed. Gameplay continues.")
 	rewarded_board = ""
 
 func _begin_rewarded(board_key: String) -> bool:

@@ -1,0 +1,7 @@
+*
+!Dockerfile
+!package.json
+!server.mjs
+!play.mjs
+!verifier.mjs
+!access.mjs

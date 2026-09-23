@@ -9,6 +9,7 @@ var _busy: bool = false
 
 func _init() -> void:
 	simulated = true
+	product_available = true
 	product_price = INTRO_PRICE_USD
 
 func purchase(product_id: String = REMOVE_ADS) -> void:

@@ -1,12 +1,15 @@
 class_name NativeAds
 extends AdsService
-## Calls the real Android SDK, always using Google's built-in demo interstitial unit.
+## Rewarded ads use the bridge's build-specific IDs and the shared permission gate.
 var bridge: AdmobBridge
 var _attached: bool = false
 var _reward_attached: bool = false
 var _reward_ad_id: String = ""
 
 func load_ad() -> void:
+	if bridge != null and bridge.config.production:
+		_report("unavailable", "Only optional rewarded ads are offered.")
+		return
 	if not can_request():
 		_report("blocked", "Native demo request blocked by ad removal or permission.")
 		return
@@ -77,7 +80,7 @@ func load_rewarded(board_key: String) -> void:
 	if not _begin_rewarded(board_key):
 		return
 	if bridge == null or not bridge.attach():
-		_reward_report("unavailable", "Google test ads require Android.")
+		_reward_report("unavailable", "Ads are unavailable. You can keep playing.")
 		return
 	if not _reward_attached:
 		bridge.sdk.connect("initialization_completed", _reward_initialized)
@@ -90,7 +93,7 @@ func load_rewarded(board_key: String) -> void:
 	if bridge.sdk.get("is_initialization_completed"):
 		_request_rewarded()
 	else:
-		_reward_report("initializing", "Preparing Google test ads…")
+		_reward_report("initializing", "Preparing your ad…")
 		bridge.sdk.call("initialize")
 
 func _reward_initialized(_info: Variant) -> void:
@@ -98,7 +101,7 @@ func _reward_initialized(_info: Variant) -> void:
 		_request_rewarded()
 
 func _request_rewarded() -> void:
-	_reward_report("loading", "Loading a Google test ad…")
+	_reward_report("loading", "Loading your ad…")
 	var request: Variant = bridge.sdk.call("create_rewarded_ad_request")
 	request.call("set_custom_data", reward_request)
 	bridge.sdk.call("load_rewarded_ad", request)
@@ -114,29 +117,29 @@ func _reward_loaded(ad: Variant, _info: Variant) -> void:
 		bridge.sdk.call("remove_rewarded_ad", ad.call("get_ad_id"))
 		return
 	_reward_ad_id = ad.call("get_ad_id")
-	_reward_report("ready", "Google rewarded test ad ready.")
+	_reward_report("ready", "Your rewarded ad is ready.")
 
 func show_rewarded() -> void:
 	if not can_request() or rewarded_state != "ready" or _reward_ad_id.is_empty():
 		_reward_report("not_ready", "No rewarded ad available. Keep playing.")
 		return
-	_reward_report("showing", "Showing a Google rewarded test ad.")
+	_reward_report("showing", "Complete the ad to earn your peek.")
 	bridge.sdk.call("show_rewarded_ad", _reward_ad_id)
 
 func _reward_load_failed(ad: Variant, _error: Variant) -> void:
 	if _matches_reward_request(ad) and can_request():
-		_reward_report("failure", "No test ad available. Keep playing or try again.")
+		_reward_report("failure", "No ad available. Keep playing or try again.")
 
 func _reward_show_failed(ad: Variant, _error: Variant) -> void:
 	if _matches_reward_request(ad):
 		bridge.sdk.call("remove_rewarded_ad", ad.call("get_ad_id"))
 		_reward_ad_id = ""
-		_reward_report("failure", "The test ad could not open. Your peek was not used.")
+		_reward_report("failure", "The ad could not open. Your peek was not used.")
 
 func _reward_dismissed(ad: Variant) -> void:
 	if _matches_reward_request(ad):
 		_reward_ad_id = ""
-		_reward_report("dismissed", "Test ad closed.")
+		_reward_report("dismissed", "Ad closed.")
 
 func _reward_earned(ad: Variant, _reward: Variant) -> void:
 	if _matches_reward_request(ad):

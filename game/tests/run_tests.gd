@@ -74,6 +74,7 @@ func _run() -> void:
 	_test_audio()
 	_test_native_ad_cleanup()
 	_test_native_rewarded_callbacks()
+	preload("res://tests/monetization_tests.gd").new().run(self)
 	await _test_services()
 	await _test_rewarded_services()
 	print("%d checks; %d failures" % [checks, failures])

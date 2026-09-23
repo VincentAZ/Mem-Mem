@@ -161,29 +161,34 @@ The lab injects simulated implementations. Fake ownership is explicitly named
 cancelled, and failed purchases cannot grant ownership. Ad ownership changes
 invalidate pending loads, so late callbacks cannot resurrect a suppressed ad.
 
-Native adapters are separate nodes. `NativeBilling` can connect/query Google Play,
-but `purchase()` is unconditionally disabled. Returned store records are marked as
-requiring verification; they are not acknowledged or granted in this foundation.
-Purchase tokens are not logged. Production requires server verification and a
-proper purchase-processing lifecycle before enabling transactions.
+Native adapters are separate nodes. `NativeBilling` retrieves the configured permanent
+buy option and localized price, launches Google Play purchases, and queries ownership
+on launch, resume and restoration. Only a signed verification response can grant Plus.
+Pending payments, failed queries and unverified store callbacks cannot grant ownership.
+Older ownership snapshots cannot erase newer purchase updates. Temporary failures
+preserve an unexpired signed receipt; a successful empty restore revokes access.
 
-`AdmobBridge` lazily creates the plugin node on Android. `NativeAds` uses only the
-plugin's fixed Google demo interstitial and rewarded units. The lab's explicit demo-ad action
-permits demo traffic without claiming a successful UMP flow; the independent
-`NativeConsent` controls exercise actual UMP status and form APIs. This shortcut
-must never be carried into a production advertising path. Production consent and
-entitlement verification are required before production ad units can be introduced.
+`server/` queries the Android Publisher API for the fixed package/product/option,
+checks purchase state, quantity and refunds, acknowledges verified purchases and
+signs installation-bound receipts. No service-account or signing private key is
+embedded in the game. Permanent grants are idempotent; the product is never consumed.
+There is no app-account database or immediate offline revocation. See
+[store setup](store-setup.md) for the seven-day cache and operational limits.
 
-Missing platform singletons report unavailable and leave gameplay running. The
-Android build includes the native plugins even though the default scene uses
-simulations. No billing, ad, or consent operation runs automatically during a level.
+`AdmobBridge` lazily creates the ad SDK. Debug builds use Google demo IDs and explicit
+test permission. The `production` export uses its generated configuration and actual
+UMP permission; the debug shortcut is unreachable. The tracked `MemMemConsent` Java
+extension exposes UMP's `canRequestAds`, required-form flow and privacy-options UI,
+which the pinned advertising wrapper does not expose. Ads are never initialized
+before permission, and changes invalidate loaded or pending ads. Production offers
+only optional rewarded ads; interstitial loading is disabled.
 
-## Deferred work
-
-Physical-device tuning and further art feedback, additional themes, paid packs,
-verified purchase processing, production ads, analytics, and iOS export remain future
-work. Native purchases are still disabled. Device playtesting will guide further
-pacing, readability, and difficulty tuning.
+`build_store.py` creates a separate generated project, validates public configuration
+and the upload key, and exports a release-signed AAB with the `production` feature.
+Only debug builds without that feature can use the development lab or simulated
+ownership. An ordinary release export without production configuration also cannot
+charge or request ads. Play/AdMob account setup and physical store validation remain
+external launch requirements.
 
 ## Quick Peek and test monetization
 
@@ -196,7 +201,8 @@ and pauses the reveal timer. Ads never change attempts, points or perfect eligib
 
 The default debug experience uses `SimulatedBilling` for the complete Plus bundle
 under the permanent `remove_ads` product. Pending/cancelled/failed operations grant
-nothing. The UI labels every purchase simulation; native purchasing stays disabled.
+nothing. Debug UI labels every purchase simulation; the production export uses
+`NativeBilling` and localized store information.
 Plus restores theme access, automatic per-board peeks and complete ad suppression.
 Already earned collection ownership remains local and survives entitlement loss.
 
@@ -204,7 +210,8 @@ Already earned collection ownership remains local and survives entitlement loss.
 custom data and validates callbacks against it. Only `rewarded_ad_user_earned_reward`
 grants an allowance, once per request and once per board. Dismissal grants nothing.
 Cancellation invalidates pending requests and cached ads. An explicit test permission
-allows Google's demo traffic; it is not a production UMP consent implementation.
+allows Google's demo traffic in development builds only. The production path uses
+`MemMemConsent` and the separate store configuration.
 The UI returns to a Ready button after reward rather than automatically peeking.
 No ads or purchases are automatically shown during play.
 

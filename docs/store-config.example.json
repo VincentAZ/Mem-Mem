@@ -1,0 +1,12 @@
+{
+  "version_code": 11,
+  "version_name": "0.7.0",
+  "purchase_option": "buy",
+  "child_directed": null,
+  "under_age_of_consent": null,
+  "verification_url": "https://verifier.example/v1/play/verify",
+  "receipt_public_key_file": "/absolute/path/to/receipt-public.pem",
+  "admob_app_id": "YOUR_ADMOB_APPLICATION_ID",
+  "rewarded_unit_id": "YOUR_ADMOB_REWARDED_UNIT_ID",
+  "privacy_url": "https://privacy.example/mem-mem"
+}
