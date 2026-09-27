@@ -13,9 +13,10 @@ from prepare_consent import install as install_consent
 
 ROOT = Path(__file__).resolve().parent.parent
 DEMO_PUBLISHER = '3940256099942544'
+APP_ADS_PATH = ROOT / 'store-assets' / 'app-ads.txt'
 
 
-def validate(config, env):
+def validate(config, env, app_ads_path=APP_ADS_PATH):
     errors = []
     for name in ('child_directed', 'under_age_of_consent'):
         if type(config.get(name)) is not bool:
@@ -33,6 +34,13 @@ def validate(config, env):
         value = config.get(name, '')
         if not isinstance(value, str) or not re.fullmatch(r'ca-app-pub-\d{16}' + separator + r'\d{10}', value) or DEMO_PUBLISHER in value:
             errors.append(f'{name}: provide your own AdMob ID, not a Google demo ID')
+    admob_app_id = config.get('admob_app_id', '')
+    if isinstance(admob_app_id, str) and (match := re.fullmatch(r'ca-app-pub-(\d{16})~\d{10}', admob_app_id)):
+        # The served app-ads.txt is a copy of this file; a stale publisher id there breaks AdMob authorization.
+        app_ads = Path(app_ads_path)
+        lines = [line.strip() for line in app_ads.read_text().splitlines() if line.strip()] if app_ads.is_file() else []
+        if len(lines) != 1 or lines[0] != f'google.com, pub-{match.group(1)}, DIRECT, f08c47fec0942fa0':
+            errors.append(f'{app_ads}: must contain exactly "google.com, pub-{match.group(1)}, DIRECT, f08c47fec0942fa0" (the admob_app_id publisher); republish the served copy after changing it')
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', str(config.get('purchase_option', ''))):
         errors.append('purchase_option: provide the permanent buy option ID from Play Console')
     if type(config.get('version_code')) is not int or config['version_code'] <= 10:

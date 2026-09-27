@@ -16,6 +16,13 @@ artwork; the vector monogram icon is unlabeled. No review submission was made.
 - `03-discover-characters.png`: 1080×1920; character browsing after earning a choice.
 - `04-dark-mode.png`: 1080×1920; next-board preview in dark mode.
 
+`app-ads.txt` is not a listing asset and is not uploaded to Play Console. It is
+the source copy of the file served at https://vincentaz.github.io/app-ads.txt
+from the public repo `VincentAZ/VincentAZ.github.io` (added September 26, 2026).
+The served copy is what AdMob crawls; keep both identical, and edit this copy
+first. `scripts/build_store.py` refuses a store build if the publisher id in
+this file does not match `admob_app_id` in the store configuration.
+
 The screenshots are captures of the current game scene rendered by the desktop
 Godot engine at a 9:16 portrait viewport, with production UI selected, rather
 than photographs or mockups. The capture plays a real first round and earns its

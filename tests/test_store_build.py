@@ -34,6 +34,8 @@ class StoreBuildTests(unittest.TestCase):
             public_key.write_text(json.loads((ROOT / 'build/receipt-fixture.json').read_text())['public_key'])
             upload = directory / 'upload.jks'
             upload.touch()  # The CLI separately validates the actual certificate with keytool.
+            app_ads = directory / 'app-ads.txt'
+            app_ads.write_text('google.com, pub-1111111111111111, DIRECT, f08c47fec0942fa0\n')
             config = {
                 'verification_url': 'https://mem-mem-verifier.run.app/v1/play/verify',
                 'privacy_url': 'https://mem-mem.app/privacy',
@@ -47,9 +49,31 @@ class StoreBuildTests(unittest.TestCase):
                 'GODOT_ANDROID_KEYSTORE_RELEASE_PATH': str(upload),
                 'GODOT_ANDROID_KEYSTORE_RELEASE_USER': 'upload',
                 'GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD': 'test-only',
-            })
+            }, app_ads_path=app_ads)
             self.assertEqual(errors, [])
             self.assertTrue(pem.startswith('-----BEGIN PUBLIC KEY-----'))
+
+    def test_app_ads_publisher_must_match_admob_app_id(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            config = {'admob_app_id': 'ca-app-pub-1111111111111111~1111111111'}
+            missing = directory / 'missing-app-ads.txt'
+            errors, _ = validate(config, {}, app_ads_path=missing)
+            self.assertTrue(any(str(missing) in error for error in errors))
+            stale = directory / 'app-ads.txt'
+            stale.write_text('google.com, pub-2222222222222222, DIRECT, f08c47fec0942fa0\n')
+            errors, _ = validate(config, {}, app_ads_path=stale)
+            self.assertTrue(any('pub-1111111111111111' in error and str(stale) in error for error in errors))
+            stale.write_text('google.com, pub-1111111111111111, DIRECT, f08c47fec0942fa0\n')
+            errors, _ = validate(config, {}, app_ads_path=stale)
+            self.assertFalse(any(str(stale) in error for error in errors))
+
+    def test_repository_app_ads_matches_production_publisher_format(self):
+        from build_store import APP_ADS_PATH
+        lines = [line for line in APP_ADS_PATH.read_text().splitlines() if line.strip()]
+        self.assertEqual(len(lines), 1)
+        self.assertRegex(lines[0], r'^google\.com, pub-\d{16}, DIRECT, f08c47fec0942fa0$')
+        self.assertNotIn('3940256099942544', lines[0])
 
     def test_non_string_urls_do_not_crash(self):
         errors, _ = validate({'verification_url': 1, 'privacy_url': []}, {})

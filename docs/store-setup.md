@@ -4,9 +4,9 @@
 Play Console now shows **Changes in review** for **0.7.0 (11) - US launch**, with
 **Start full rollout** and **United States** as the only added country. All 11
 queued changes were submitted. At **21:46 UTC**, the quick-check progress block
-was replaced by **Your changes are now in review**. Google approval remains
-pending, so **the app is not yet verified published to production**. Managed
-publishing is off; approved changes are set to publish automatically. The existing
+was replaced by **Your changes are now in review**. **Update, September 26,
+2026: Google approved the release and the Play listing is public.** Managed
+publishing is off; approved changes published automatically. The existing
 Google Play Games on PC opt-in was preserved in this submission.
 
 The production integration is implemented and internal testing is active. Basic
@@ -53,10 +53,11 @@ API 35 emulator. See [deployment details](cloud-deployment.md) and
 **Mem-Mem Plus** (`remove_ads`, permanent `buy` option) is **Active**, priced at
 **USD 1.99**, available only in the United States. Play merchant setup is complete;
 payout method and 15% service-fee enrollment remain separate owner/account tasks.
-The internal release is published; production rollout is submitted for review
-and is not yet confirmed available to the public. The access-code policy
-addendum and AdMob US message are published. Complete Play-installed purchase
-and consent validation before production.
+The internal release is published and the production rollout is live: the Play
+listing has been public since September 26, 2026. The access-code policy
+addendum and AdMob US message are published. The remaining Play-installed
+purchase and consent validation is tracked in the extended device tests below
+and is not claimed complete.
 
 Internal test: https://play.google.com/apps/internaltest/4701136527198574687.
 Testers currently see the temporary name `io.github.vincentaz.memmem (unreviewed)`.
@@ -75,8 +76,9 @@ saved in Play Console, but the track is inactive. AdMob's **Mem-Mem US privacy
 choices** message is **Published** in English for all current and future
 supported US states. Both choice explanations now reflect non-personalized ads;
 the published form, changed choices and restart persistence passed in an isolated
-emulator build with regulated-US test geography. Final Play-build ad serving still
-awaits AdMob account and app approval.
+emulator build with regulated-US test geography. The AdMob account was approved on
+September 26, 2026; final Play-build ad serving still awaits AdMob **app
+verification** (see the status at the top of this document).
 
 - Permanent non-consumable product: **`remove_ads`**, display name **Mem-Mem Plus**.
 - One permanent **buy** purchase option; use its exact ID in both configurations.
@@ -320,6 +322,11 @@ the UI settled and is not counted as a completed validation.
 
 
 ### Isolated ad and consent validation September 23
+
+*Superseded on September 26, 2026: the AdMob account is approved, the listing is
+public and linked in AdMob, and only automatic app verification remains. See the
+status at the top of this document. The paragraph below is the September 23
+snapshot.*
 
 The AdMob Home page was rechecked: **Your account isn't approved yet / Your account
 is being verified**, with **Link to app store** outstanding. Payment profile is

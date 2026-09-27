@@ -1,17 +1,21 @@
 # Mem-Mem account setup checklist
 
-**Current status, September 23, approximately 21:40 UTC:** production release
-**0.7.0 (11) - US launch** and all 11 queued changes are submitted. Publishing
-overview shows **Changes in review**. Quick checks finished by **21:46 UTC**;
-Google approval is pending. The rollout is
-US only; managed publishing is off for automatic publication after approval.
-**Public production availability is not yet verified.** Earlier setup notes below
-record the sequence before this submission; the current status takes precedence.
+**Current status, September 26, 2026:** production release **0.7.0 (11) - US
+launch** was approved and the Play listing is public (US only). The AdMob account
+is approved, the AdMob app is linked to the Play listing, `app-ads.txt` is served
+at https://vincentaz.github.io/app-ads.txt, and the Play listing website now
+points at https://vincentaz.github.io so AdMob can crawl it. Only AdMob's
+automatic app verification remains; see the status block at the top of
+[store-setup.md](store-setup.md). Earlier setup notes below record the sequence
+before this point; the current status takes precedence.
 
 - [x] Prepare and submit the production release using the tested bundle.
-- [ ] Google completes checks/review and publishes the production rollout.
-- [ ] Verify public store availability and production track status, then link the
-  public listing in AdMob and complete its separate app review.
+- [x] Google completes checks/review and publishes the production rollout
+  (September 23 submission; approved and public by September 26).
+- [x] Verify public store availability, link the public listing in AdMob, publish
+  `app-ads.txt` and point the listing website at it (September 26).
+- [ ] AdMob automatic app verification: re-run **Verify app → Check for updates**
+  after propagation (listing-website change up to 1 hour; crawler up to 7 days).
 
 Use this alongside [store-setup.md](store-setup.md). Unchecked items are pending,
 not evidence that an account or resource has been created. No production release
@@ -42,7 +46,10 @@ is ready until the live release gates in that guide pass.
 - [x] Public developer name observed in Console: Plan 9 from Outer Space.
 - [x] Support/privacy email confirmed by owner: vincent.serpico@ailearningcenter.ai.
 - [x] Website chosen by owner: https://serpico.ai/ (currently redirects to
-  https://www.ailearningcenter.ai/).
+  https://www.ailearningcenter.ai/). **The Play listing website was changed on
+  September 26, 2026 to https://vincentaz.github.io** so AdMob can find
+  `app-ads.txt`; do not revert it to serpico.ai. The merchant profile website is
+  unchanged.
 - [x] Website platform confirmed by owner: Wix.
 - [x] Publish the reviewed [privacy policy](privacy-policy.md) on Wix. The owner
   explicitly approved the policy disclosures and publication of all saved site
@@ -159,7 +166,8 @@ reviewed before release.
   if positioning changes; [Google's definitions](https://support.google.com/googleplay/android-developer/answer/14738291)
   include cognitive-health/brain-training features.
 - [x] Category/contact: **Game / Puzzle**; support email
-  **vincent.serpico@ailearningcenter.ai**; website **https://serpico.ai/**.
+  **vincent.serpico@ailearningcenter.ai**; website **https://vincentaz.github.io**
+  (changed from https://serpico.ai/ on September 26, 2026 for `app-ads.txt`).
   Optional phone left blank; existing external-marketing setting preserved.
 - [x] Sign in details: **Yes**, with private reusable-code instructions for Plus.
   The code was validated against the live service using the signed bundle on the
