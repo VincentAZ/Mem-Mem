@@ -11,9 +11,19 @@ Google Play Games on PC opt-in was preserved in this submission.
 
 The production integration is implemented and internal testing is active. Basic
 Play purchase, same-account restore and refund/revocation passed. US consent and
-completed reward delivery passed in an isolated native test build. AdMob account
-and app approval are pending; optional ads currently fall back gracefully on no
-fill. Remaining extended device tests below are not claimed complete. The user
+completed reward delivery passed in an isolated native test build. The AdMob
+account was approved on September 26, 2026, and the Play listing is public. On
+September 26, 2026 the remaining console steps were completed: the AdMob app was
+linked to the Google Play listing (`io.github.vincentaz.memmem`), `store-assets/app-ads.txt`
+was published at https://vincentaz.github.io/app-ads.txt (public repo
+`VincentAZ/VincentAZ.github.io`, verified serving the correct `pub-3679571471202338`
+line), and the Play listing website was changed from https://serpico.ai/ to
+https://vincentaz.github.io ("Change published" confirmed). AdMob app verification
+still shows **Not verified / Requires review**: the listing-website change takes up
+to an hour to appear on Google Play and AdMob's crawler can take up to 7 days to
+pick up the new domain. Re-run **Verify app → Check for updates** (AdMob → Apps →
+Mem-Mem → App settings) after propagation; no other action is outstanding. Until
+review completes, optional ads fall back gracefully on no fill. Remaining extended device tests below are not claimed complete. The user
 explicitly directed continuing through production publication on September 23.
 Debug builds use simulated purchases and Google demo ads; the submitted store
 bundle uses native billing, server verification, signed offline access, UMP and
