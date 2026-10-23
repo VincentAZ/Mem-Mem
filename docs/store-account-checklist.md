@@ -16,6 +16,11 @@ before this point; the current status takes precedence.
   `app-ads.txt` and point the listing website at it (September 26).
 - [ ] AdMob automatic app verification: re-run **Verify app → Check for updates**
   after propagation (listing-website change up to 1 hour; crawler up to 7 days).
+- [ ] **Support email changed, October 23, 2026:** the `ailearningcenter.ai`
+  address is defunct and receives nothing. The current contact is
+  **vincent.serpico@serpico.ai**. The documents in this repository now use it, but
+  the Play Console contact details, the merchant profile, and the live privacy
+  policy page still show the old address until they are updated.
 
 Use this alongside [store-setup.md](store-setup.md). Unchecked items are pending,
 not evidence that an account or resource has been created. No production release
@@ -44,7 +49,7 @@ is ready until the live release gates in that guide pass.
 - [x] Save production country availability in Play Console: **United States** is
   the sole targeted country. Production remains inactive; no release was created.
 - [x] Public developer name observed in Console: Plan 9 from Outer Space.
-- [x] Support/privacy email confirmed by owner: vincent.serpico@ailearningcenter.ai.
+- [x] Support/privacy email confirmed by owner: vincent.serpico@serpico.ai.
 - [x] Website chosen by owner: https://serpico.ai/ (currently redirects to
   https://www.ailearningcenter.ai/). **The Play listing website was changed on
   September 26, 2026 to https://vincentaz.github.io** so AdMob can find
@@ -96,7 +101,7 @@ do not establish compliance.
   form submitted successfully. Console now displays **Google Play Apps / SERPICO
   ENTERPRISES, L.L.C.**, earnings, transactions and payment settings.
   Website: **https://serpico.ai/**; category: **Computer Software**; support email:
-  **vincent.serpico@ailearningcenter.ai**. Existing legal and contact details were
+  **vincent.serpico@serpico.ai**. Existing legal and contact details were
   preserved. This does not complete payout-method, tax or later verification tasks.
 - [ ] Add a payout method; Console currently says **Add a payment method to receive
   your earnings**. The owner supplies bank/payment details directly in Google.
@@ -166,7 +171,7 @@ reviewed before release.
   if positioning changes; [Google's definitions](https://support.google.com/googleplay/android-developer/answer/14738291)
   include cognitive-health/brain-training features.
 - [x] Category/contact: **Game / Puzzle**; support email
-  **vincent.serpico@ailearningcenter.ai**; website **https://vincentaz.github.io**
+  **vincent.serpico@serpico.ai**; website **https://vincentaz.github.io**
   (changed from https://serpico.ai/ on September 26, 2026 for `app-ads.txt`).
   Optional phone left blank; existing external-marketing setting preserved.
 - [x] Sign in details: **Yes**, with private reusable-code instructions for Plus.

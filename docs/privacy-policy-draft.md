@@ -21,7 +21,7 @@ internal notes only and must not be pasted into the public page.
 
 - Operator: SERPICO ENTERPRISES, L.L.C., publishing as Plan 9 from Outer Space,
   matches the observed Play and AdMob organization. Owner approved its inclusion.
-- Support email: vincent.serpico@ailearningcenter.ai, confirmed by the owner.
+- Support email: vincent.serpico@serpico.ai, confirmed by the owner.
 - Intended audience: adults 18+, primarily adult women; United States launch only.
 - A 90-day support-email retention policy after resolution was proposed to the
   owner, with legal/dispute exceptions. No approval received yet. The prepared

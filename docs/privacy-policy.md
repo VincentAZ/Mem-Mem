@@ -10,7 +10,7 @@ Mem-Mem is intended for adults aged 18 and over. Its initial distribution is in
 the United States.
 
 For privacy questions or requests, email
-[vincent.serpico@ailearningcenter.ai](mailto:vincent.serpico@ailearningcenter.ai).
+[vincent.serpico@serpico.ai](mailto:vincent.serpico@serpico.ai).
 
 ## Information stored on your device
 
@@ -120,7 +120,7 @@ secure.
 Depending on your state and the laws that apply, you may have rights to access,
 correct, obtain a copy of, or delete personal information, and to opt out of
 certain advertising-related processing. Email
-[vincent.serpico@ailearningcenter.ai](mailto:vincent.serpico@ailearningcenter.ai)
+[vincent.serpico@serpico.ai](mailto:vincent.serpico@serpico.ai)
 to make a request or appeal our response. We may request information reasonably
 needed to verify your request, and will explain any applicable limits or reasons
 we cannot fulfill it. We will not discriminate against you for exercising
