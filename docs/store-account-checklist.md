@@ -80,8 +80,8 @@ do not establish compliance.
   succeeded September 22; package is **Registered**, confirmed September 23.
   No additional identity task appeared on the inspected verification page.
 - [x] Create **Mem-Mem** as a free game, default language English (United States).
-  The owner submitted the creation form; the app dashboard was verified afterward.
-  [Mem-Mem dashboard](https://play.google.com/console/u/0/developers/8105003511787020834/app/4976157516315816306/app-dashboard).
+  The owner submitted the creation form; the app dashboard was verified afterward
+  in Play Console.
   Plus is now an active separate in-app purchase. Bundle 0.7.0 (11) is uploaded
   and **available to internal testers** as of September 23, 2026.
 - [x] Check package availability for **`io.github.vincentaz.memmem`** during creation.
@@ -109,10 +109,10 @@ do not establish compliance.
   unavailable. Console confirms the buy option is **Active**.
 - [x] Prepare internal testing: signed **0.7.0 (11)** bundle uploaded and saved as
   **0.7.0 (11) - Internal validation**. The new **Mem-Mem internal** list contains
-  only **vinceserpico@gmail.com** and is selected. Existing lists are unchanged.
+  only the owner's Google account and is selected. Existing lists are unchanged.
   The track is **Active**, and the release is **Available to internal testers**
   (September 23, 11:18 AM, Console time). Owner accepted the test invitation.
-  Join: https://play.google.com/apps/internaltest/4701136527198574687.
+  The join link is private to the tester list.
   Temporary app name: `io.github.vincentaz.memmem (unreviewed)`.
 - [x] Select **Mem-Mem internal** for license testing, with the existing
   **RESPOND_NORMALLY** response preserved. License-test settings apply across the
@@ -258,8 +258,8 @@ exist; never overwrite an existing configuration to restart setup.
   verified live page. The store check no longer reports a privacy URL placeholder.
 - [x] Generate the Android upload key and receipt-signing keypair without replacing
   existing keys. Signing variables and the reusable reviewer credential are in
-  ignored `.tools/store/` files with restricted permissions. An additional local
-  backup exists at `~/.local/share/mem-mem-release-backup`.
+  ignored `.tools/store/` files with restricted permissions. An additional
+  restricted local backup exists outside the repository.
 - [x] Back up release recovery material off-device in the separate Mem-Mem
   project: Secret Manager **mem-mem-release-recovery**, version 1. All eight
   archived files were read back and compared byte-for-byte on September 23. No

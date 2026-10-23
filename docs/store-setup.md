@@ -59,7 +59,7 @@ addendum and AdMob US message are published. The remaining Play-installed
 purchase and consent validation is tracked in the extended device tests below
 and is not claimed complete.
 
-Internal test: https://play.google.com/apps/internaltest/4701136527198574687.
+Internal test: the join link is private to the tester list.
 Testers currently see the temporary name `io.github.vincentaz.memmem (unreviewed)`.
 
 ## The offer
@@ -313,7 +313,7 @@ restoring it is no longer part of the plan.
   reward delivery and early-dismissal behavior remain unverified.
 
 Evidence: `build/screenshots/pixel-play-*.png`, `pixel-ad-*.png`; test order
-`GPA.3395-2616-3677-20565` in Play Console. The Pixel remains on the fresh Play
+`GPA.…(order ID recorded privately)` in Play Console. The Pixel remains on the fresh Play
 build in free mode after revocation. Upgrade/save migration testing is deferred
 to future Google Play upgrades per the owner. Decline/pending flows, another-device
 restore, offline expiry, outage recovery and supported-state consent remain
@@ -418,8 +418,8 @@ Android developer verification was checked after submission: Mem-Mem /
 shows the organization details without an additional verification action.
 
 Submission activity independently confirms **submission 1**, sent **September 23,
-2026, 2:40 PM Phoenix (21:40 UTC)**, status **In review**.
-[Submission details](https://play.google.com/console/u/0/developers/8105003511787020834/app/4976157516315816306/publishing/submission-activity/1/details).
+2026, 21:40 UTC**, status **In review**.
+Submission details are in Play Console.
 The Dashboard now labels the production track Active, but Update status remains
 In review; this is not evidence of public availability.
 
@@ -448,13 +448,13 @@ and collection 3/56; no app storage was cleared or installation replaced.
   shows the app's pending message and disables another purchase. Force-stop and
   restart preserve the pending state. After Google cancels it, Restore returns
   **No Plus purchase found** and enables purchase again. Console independently
-  lists order **GPA.3368-4228-2500-73101** as **Canceled**.
+  lists order **GPA.…(order ID recorded privately)** as **Canceled**.
 - **Pending then approved / process interruption:** **Slow test card, approves
   after a few minutes** shows pending and does not unlock Plus. Force-stopped
   Mem-Mem while waiting; Google processed the order while the app was closed.
   Relaunch automatically recovered and verified the purchase, showing **Plus
   active**. Explicit Restore also preserves access without opening checkout.
-  Order **GPA.3366-9212-7075-45416** was received at 22:12:17 UTC and processed
+  Order **GPA.…(order ID recorded privately)** was received at 22:12:17 UTC and processed
   at 22:13:18 UTC according to Console. The already-active Plus purchase button
   remains disabled, preventing duplicate purchase through the app.
 - **Refund/revocation with existing progress:** refunded that same test order at

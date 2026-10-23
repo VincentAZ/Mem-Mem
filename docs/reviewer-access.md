@@ -63,8 +63,8 @@ ignored by Git: `upload.jks`, `signing.env`, `receipt-private.pem`,
 `review-access-code.txt`, and `verifier.env`. `receipt-public.pem` is public
 configuration. Existing files were preserved during generation.
 
-An additional restricted local copy exists at
-`~/.local/share/mem-mem-release-backup`. This protects against losing the working
+An additional restricted local copy exists outside the repository. This protects
+against losing the working
 directory, **not loss of the machine**. Off-device recovery is now also stored in
 Secret Manager **mem-mem-release-recovery**, version 1, in project
 `mem-mem-509517`. It contains upload/signing files, receipt keys, review credential

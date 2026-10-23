@@ -1,12 +1,13 @@
 # Mem-Mem verification service
 
 Deployed September 23, 2026 in the separate **Mem-Mem** Google Cloud project
-`mem-mem-509517` (project number `164091740913`), as requested by the owner.
+`mem-mem-509517`, as requested by the owner.
 Existing unrelated projects were not modified. The project uses the existing
 organization billing account.
 
 - Cloud Run service: `mem-mem-verifier`, region `us-central1`.
-- Origin: `https://mem-mem-verifier-ai7jv3qgua-uc.a.run.app`.
+- Origin: the service's Cloud Run HTTPS URL, recorded as `verification_url` in
+  the ignored store configuration.
 - Purchase endpoint: `/v1/play/verify`; reusable-code endpoint: `/v1/access/redeem`.
 - Liveness: `/health`. Avoid `/healthz`: Cloud Run reserves some paths ending in
   `z` ([known issues](https://docs.cloud.google.com/run/docs/known-issues#reserved-url-paths)).
