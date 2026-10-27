@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Collection reactions validation — 0.5.2
 
 Validated locally on 2026-09-21. The collection now celebrates eligible selections

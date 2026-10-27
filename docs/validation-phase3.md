@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Phase 3 validation record
 
 Validated locally on 2026-09-20. Phase 3 implements the first character, animation,

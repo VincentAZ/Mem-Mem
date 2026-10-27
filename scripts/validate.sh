@@ -3,8 +3,6 @@ set -euo pipefail
 source "$(dirname -- "$0")/env.sh"
 cd "$MEMMEM_ROOT"
 mkdir -p build
-node --test server/*.test.mjs
-node server/receipt_fixture.mjs build/receipt-fixture.json
 python3 -m unittest discover -s tests -p 'test_*.py'
 python3 scripts/generate_people.py --check
 python3 scripts/generate_audio.py --check

@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 Historical foundation record. The APK and current results are superseded by
 [Phase 2 validation](validation.md).
 

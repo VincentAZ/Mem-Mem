@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the shipped binary, including native SDK classes and ELF page alignment."""
+"""Check the shipped binary, excluding ads and billing SDK classes and ELF page alignment."""
 import json
 from pathlib import Path
 import struct
@@ -17,8 +17,8 @@ with zipfile.ZipFile(apk) as archive:
         b'Lio/github/vincentaz/memmem/MemMemConsent;',
         b'Lcom/google/android/ump/UserMessagingPlatform;',
     ):
-        if name not in dex:
-            raise SystemExit('Native class absent from APK: ' + name.decode())
+        if name in dex:
+            raise SystemExit('Forbidden monetization class in APK: ' + name.decode())
     libraries = []
     for name in archive.namelist():
         if not name.endswith('.so'):
@@ -42,4 +42,4 @@ with zipfile.ZipFile(apk) as archive:
         raise SystemExit('ARM64 Godot library missing')
     if not any('x86_64/libgodot_android.so' in x['library'] for x in libraries):
         raise SystemExit('x86_64 Godot library missing')
-print(json.dumps({'apk': str(apk), 'native_plugins': 'present', 'libraries': libraries}, indent=2))
+print(json.dumps({'apk': str(apk), 'monetization_plugins': 'absent', 'libraries': libraries}, indent=2))

@@ -91,11 +91,11 @@ func earn_peek(key: String) -> bool:
 	peek_earned = true
 	return true
 
-func can_peek(plus: bool) -> bool:
-	return not opening and not resolving and not peeking and not complete() and not peek_used and (plus or peek_earned)
+func can_peek(_legacy_plus: bool = true) -> bool:
+	return not opening and not resolving and not peeking and not complete() and not peek_used
 
-func begin_peek(plus: bool) -> bool:
-	if not can_peek(plus):
+func begin_peek(_legacy_plus: bool = true) -> bool:
+	if not can_peek():
 		return false
 	peek_used = true
 	peeking = true

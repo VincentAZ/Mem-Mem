@@ -1,6 +1,5 @@
 class_name CollectionPanel
 extends PanelContainer
-signal upgrade_requested
 signal closed
 signal character_chosen(character: int)
 var progress: GameProgress
@@ -140,7 +139,7 @@ func refresh() -> void:
 	audio.stop_all()
 	add_theme_stylebox_override("panel", GameStyle.surface(GamePalette.background, 0, 0))
 	tally.text = "%02d / %d" % [progress.collected.size(), PeopleCatalog.COUNT]
-	summary.text = "%d character %s saved\n100%% accuracy earns your choice from unlocked themes." % [progress.choice_tokens, "choice" if progress.choice_tokens == 1 else "choices"]
+	summary.text = "%d character %s saved\n100%% accuracy earns your choice from any theme." % [progress.choice_tokens, "choice" if progress.choice_tokens == 1 else "choices"]
 	if progress.collected.size() == PeopleCatalog.COUNT:
 		summary.text = "All 56 collected! Your extra choices stay saved."
 	mine.text = "My collection · %d" % progress.collected.size()
@@ -157,7 +156,7 @@ func refresh() -> void:
 		var entry: CollectionCard = CollectionCard.new()
 		entry.character = character
 		entry.owned = progress.collected.has(character)
-		entry.locked = not PeopleCatalog.is_unlocked(character, progress.plus_enabled)
+		entry.locked = not PeopleCatalog.is_unlocked(character)
 		entry.selected = character == selected
 		entry.reduced_motion = progress.reduced_motion
 		entry.tooltip_text = "%s · %s" % [PeopleCatalog.NAMES[character], "Collected" if entry.owned else "Not collected"]
@@ -166,15 +165,12 @@ func refresh() -> void:
 		entries.append(entry)
 	empty.visible = entries.is_empty()
 	scroll.visible = not entries.is_empty()
-	empty.text = "Your collection starts here.\nFinish a board with 100% accuracy,\nthen choose a character from an unlocked theme." if progress.collected.is_empty() else "No collected characters in this theme yet.\nTry Discover all."
+	empty.text = "Your collection starts here.\nFinish a board with 100% accuracy,\nthen choose a character from any theme." if progress.collected.is_empty() else "No collected characters in this theme yet.\nTry Discover all."
 	_update_action()
 	_sync_animation()
 
 func _pick(character: int) -> void:
 	if not visible or not animation_allowed:
-		return
-	if not PeopleCatalog.is_unlocked(character, progress.plus_enabled) and not progress.collected.has(character):
-		upgrade_requested.emit()
 		return
 	selected = character
 	var picked: CollectionCard
@@ -217,7 +213,7 @@ func celebrate_claim(character: int) -> void:
 			return
 
 func _update_action() -> void:
-	action.disabled = selected < 0 or progress.choice_tokens <= 0 or progress.collected.has(selected) or not PeopleCatalog.is_unlocked(selected, progress.plus_enabled)
+	action.disabled = selected < 0 or progress.choice_tokens <= 0 or progress.collected.has(selected) or not PeopleCatalog.is_unlocked(selected)
 	action.visible = not owned_only
 	if selected < 0:
 		action.text = "Choose a character above" if progress.choice_tokens > 0 else "Perfect a board to earn a choice"

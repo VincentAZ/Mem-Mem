@@ -9,16 +9,6 @@
     "url": "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz",
     "sha256": "f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011"
   },
-  "billing": {
-    "version": "3.3.0",
-    "url": "https://github.com/godot-sdk-integrations/godot-google-play-billing/releases/download/3.3.0/godot-google-play-billing.zip",
-    "sha256": "20d75623d6f337f08d8283c83098b73678d5f575e39247af5a8eb80588b18568"
-  },
-  "admob": {
-    "version": "v7.0",
-    "url": "https://github.com/godot-sdk-integrations/godot-admob/releases/download/v7.0/AdmobPlugin-Android-v7.0.zip",
-    "sha256": "ce38b75aeb4bb870fda8b74e1513d807696d8485d237c263b7b7a9613493aee8"
-  },
   "jdk": {
     "version": "17.0.20.1+1",
     "url": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.20.1%2B1/OpenJDK17U-jdk_x64_linux_hotspot_17.0.20.1_1.tar.gz",

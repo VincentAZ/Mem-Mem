@@ -75,8 +75,6 @@ def main():
             if Path(name).name in ('android_source.zip', 'android_debug.apk', 'android_release.apk', 'version.txt'):
                 with archive.open(name) as src, (template_root / Path(name).name).open('wb') as dst:
                     shutil.copyfileobj(src, dst)
-    for name in ('billing', 'admob'):
-        unzip(archives[name], TOOLS / (name + '-unpacked'))
     print('Archives verified and extracted. Run scripts/setup.sh to install SDK packages.', flush=True)
 
 

@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Dependency and build notes
 
 `scripts/dependencies.json` pins archive versions, official URLs, and checksums.

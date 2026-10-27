@@ -5,7 +5,6 @@ const VERSION: int = 4
 # The easier wave starts after the current legacy board, never halfway through it.
 var easy_from_level: int = 1
 # Runtime service entitlement; deliberately excluded from game-save ownership.
-var plus_enabled: bool = false
 # Earlier levels used the old six-board wave; retain its score bounds on migration.
 var expanded_from_level: int = 1
 var seed_value: int = 0
@@ -36,7 +35,7 @@ func settle_collection_reward() -> bool:
 	return true
 
 func collect_character(character: int) -> bool:
-	if choice_tokens <= 0 or not PeopleCatalog.is_unlocked(character, plus_enabled) or collected.has(character):
+	if choice_tokens <= 0 or not PeopleCatalog.is_unlocked(character) or collected.has(character):
 		return false
 	collected.append(character)
 	choice_tokens -= 1
@@ -56,7 +55,7 @@ func advance() -> bool:
 		return false
 	settle_collection_reward()
 	banked_points += round_state.points()
-	var pool: Array[int] = PeopleCatalog.available_themes(plus_enabled)
+	var pool: Array[int] = PeopleCatalog.available_themes()
 	var chosen: int = preferred_theme if pool.has(preferred_theme) else -1
 	round_state = MatchRound.create(round_state.level + 1, seed_value, 4, chosen, easy_from_level, pool)
 	return true

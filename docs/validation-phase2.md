@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Phase 2 validation record
 
 The playable game loop implements all five requested items: player-controlled levels,

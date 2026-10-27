@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Mem-Mem account setup checklist
 
 **Current status, September 26, 2026:** production release **0.7.0 (11) - US

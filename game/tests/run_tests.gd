@@ -2,59 +2,6 @@ extends SceneTree
 var checks: int = 0
 var failures: int = 0
 
-class AdCacheStub extends Node:
-	var cached: int = 0
-	var invalid_removals: int = 0
-	func is_interstitial_ad_loaded() -> bool:
-		return cached > 0
-	func remove_interstitial_ad() -> void:
-		if cached == 0:
-			invalid_removals += 1
-		else:
-			cached -= 1
-
-class RewardRequestStub extends RefCounted:
-	var token: String = ""
-	func set_custom_data(value: String) -> void:
-		token = value
-	func get_custom_data() -> String:
-		return token
-
-class RewardInfoStub extends RefCounted:
-	var id: String = ""
-	var request: RewardRequestStub
-	func get_ad_id() -> String:
-		return id
-	func get_load_ad_request() -> RewardRequestStub:
-		return request
-
-class RewardSDKStub extends Node:
-	signal initialization_completed(info: Variant)
-	signal rewarded_ad_loaded(ad: Variant, info: Variant)
-	signal rewarded_ad_failed_to_load(ad: Variant, error: Variant)
-	signal rewarded_ad_failed_to_show_full_screen_content(ad: Variant, error: Variant)
-	signal rewarded_ad_dismissed_full_screen_content(ad: Variant)
-	signal rewarded_ad_user_earned_reward(ad: Variant, reward: Variant)
-	var is_initialization_completed: bool = true
-	var request: RewardRequestStub
-	var cached: Array[String] = []
-	var shown: String = ""
-	func create_rewarded_ad_request() -> RewardRequestStub:
-		return RewardRequestStub.new()
-	func load_rewarded_ad(value: RewardRequestStub) -> void:
-		request = value
-	func is_rewarded_ad_loaded() -> bool:
-		return not cached.is_empty()
-	func remove_rewarded_ad(id: String = "") -> void:
-		if id.is_empty():
-			cached.pop_back()
-		else:
-			cached.erase(id)
-	func show_rewarded_ad(id: String) -> void:
-		shown = id
-	func is_interstitial_ad_loaded() -> bool:
-		return false
-
 func _initialize() -> void:
 	_run.call_deferred()
 
@@ -72,35 +19,8 @@ func _run() -> void:
 	_test_easier_boards()
 	_test_peek_rules()
 	_test_audio()
-	_test_native_ad_cleanup()
-	_test_native_rewarded_callbacks()
-	preload("res://tests/monetization_tests.gd").new().run(self)
-	await _test_services()
-	await _test_rewarded_services()
 	print("%d checks; %d failures" % [checks, failures])
 	quit(0 if failures == 0 else 1)
-
-func _test_native_ad_cleanup() -> void:
-	var bridge: AdmobBridge = AdmobBridge.new()
-	var sdk: AdCacheStub = AdCacheStub.new()
-	var ads: NativeAds = NativeAds.new()
-	root.add_child(bridge)
-	bridge.add_child(sdk)
-	bridge.sdk = sdk
-	root.add_child(ads)
-	ads.bridge = bridge
-	ads.set_consent_allowed(false)
-	check(sdk.invalid_removals == 0, "native consent gate never removes a nonexistent SDK ad")
-	sdk.cached = 2
-	ads.loaded = true
-	ads.set_ad_free(true)
-	check(sdk.cached == 0 and not ads.loaded, "native restoration drains every cached ad")
-	ads.set_ad_free(true)
-	check(sdk.invalid_removals == 0, "repeated native invalidation is safe")
-	ads._load_failed(null, null)
-	check(ads.state == "suppressed", "late native failure preserves suppression status")
-	ads.queue_free()
-	bridge.queue_free()
 
 func _test_round() -> void:
 	for seed_number: int in range(16):
@@ -422,109 +342,6 @@ func _test_audio() -> void:
 	check(sound.play_cue(&"next"), "unmuting and resuming allows the next cue")
 	sound.free()
 
-func _test_services() -> void:
-	var billing: SimulatedBilling = SimulatedBilling.new()
-	billing.save_path = "user://test_ownership.json"
-	var ads: SimulatedAds = SimulatedAds.new()
-	var consent: SimulatedConsent = SimulatedConsent.new()
-	root.add_child(billing)
-	root.add_child(ads)
-	root.add_child(consent)
-	billing.entitlement_changed.connect(ads.set_ad_free)
-	consent.permission_changed.connect(ads.set_consent_allowed)
-	billing.reset_simulation()
-	ads.load_ad()
-	check(not ads.loaded and ads.state == "blocked", "unknown consent blocks ads")
-	consent.outcome = "required"
-	consent.request_update()
-	check(consent.form_available and not consent.can_request_ads, "required consent exposes form")
-	consent.resolve(false)
-	check(not ads.can_request(), "decline permits gameplay but blocks ads")
-	consent.request_update()
-	consent.resolve(true)
-	check(ads.can_request(), "explicit simulated consent permits test ads")
-	billing.outcome = "pending"
-	billing.purchase()
-	await create_timer(0.2).timeout
-	check(billing.pending and not billing.ad_free and ads.can_request(), "pending purchase never grants entitlement")
-	billing.complete_pending(false)
-	check(not billing.pending and not billing.ad_free, "pending cancellation preserves ownership")
-	for outcome: String in ["cancel", "failure"]:
-		billing.outcome = outcome
-		billing.purchase()
-		await create_timer(0.2).timeout
-		check(not billing.ad_free, "cancel/failure cannot unlock ownership")
-	ads.fail_load = true
-	ads.load_ad()
-	await create_timer(0.2).timeout
-	check(ads.state == "failure" and not ads.loaded, "ad load failure returns without blocking gameplay")
-	ads.fail_load = false
-	ads.load_ad()
-	await create_timer(0.2).timeout
-	ads.fail_show = true
-	ads.show_ad()
-	check(ads.state == "failure" and not ads.loaded, "ad show failure consumes unusable ad")
-	ads.load_ad()
-	await create_timer(0.2).timeout
-	ads.fail_show = false
-	ads.show_ad()
-	check(ads.state == "showing", "simulated ad shows")
-	ads.dismiss()
-	check(ads.state == "dismissed", "ad dismissal returns to gameplay")
-	ads.load_ad()
-	await create_timer(0.2).timeout
-	billing.seed_restorable_purchase()
-	billing.restore()
-	check(billing.ad_free and not ads.loaded, "restore invalidates already-loaded ad")
-	ads.show_ad()
-	check(ads.state == "suppressed", "restored ownership prevents ad display")
-	billing.reset_simulation()
-	ads.load_ad()
-	billing.seed_restorable_purchase()
-	billing.restore()
-	await create_timer(0.2).timeout
-	check(not ads.loaded and ads.state == "suppressed", "late ad callback cannot undo restored ownership")
-	billing.reset_simulation()
-	ads.load_ad()
-	consent.outcome = "failure"
-	consent.request_update()
-	await create_timer(0.2).timeout
-	check(not ads.loaded and not ads.can_request(), "consent failure invalidates in-flight ad load")
-	consent.outcome = "unavailable"
-	consent.request_update()
-	check(not consent.form_available and not ads.can_request(), "unavailable consent stays gated")
-	billing.outcome = "pending"
-	billing.purchase()
-	await create_timer(0.2).timeout
-	billing.complete_pending(true)
-	check(billing.ad_free, "completed pending payment grants simulated ownership")
-	var replacement: SimulatedBilling = SimulatedBilling.new()
-	replacement.save_path = billing.save_path
-	root.add_child(replacement)
-	replacement.restore()
-	check(replacement.ad_free, "ownership persists across service instances")
-	billing.reset_simulation()
-	billing.outcome = "success"
-	billing.purchase()
-	billing.reset_simulation()
-	await create_timer(0.2).timeout
-	check(not billing.ad_free, "reset cancels in-flight simulated purchase")
-	var native: NativeBilling = NativeBilling.new()
-	root.add_child(native)
-	native.purchase()
-	check(native.state == "disabled" and not native.ad_free, "native adapter cannot start a real charge")
-	native.restore()
-	check(native.state == "unavailable", "unconnected native restoration fails gracefully")
-	var corrupt: FileAccess = FileAccess.open(billing.save_path, FileAccess.WRITE)
-	corrupt.store_string("not json")
-	corrupt.close()
-	billing.restore()
-	check(not billing.ad_free, "corrupt simulation file cannot grant ownership")
-	for node: Node in [native, replacement, billing, ads, consent]:
-		node.queue_free()
-	DirAccess.remove_absolute("user://test_ownership.json")
-	await process_frame
-
 func _test_easier_boards() -> void:
 	check(PeopleCatalog.COUNT == 56, "56 stable collectible IDs")
 	for theme_id: int in range(7):
@@ -573,25 +390,23 @@ func _test_easier_boards() -> void:
 	var p: GameProgress = GameProgress.create(27)
 	_clear_round(p.round_state)
 	p.settle_collection_reward()
-	check(not p.collect_character(32) and p.choice_tokens == 1, "free perfect choice cannot claim a paid character")
-	p.plus_enabled = true
-	check(p.collect_character(55) and p.collected == [55], "Plus unlocks paid collectible choices without auto-claiming")
+	check(p.collect_character(55) and p.collected == [55], "every character can be collected without a purchase")
 	p.preferred_theme = 6
 	p.advance()
 	var snapshot: Dictionary = p.snapshot()
 	var reloaded: GameProgress = GameProgress.from_snapshot(snapshot)
-	check(not reloaded.plus_enabled and reloaded.collected == [55], "game saves preserve owned characters but never grant a purchase")
+	check(reloaded.collected == [55], "game saves preserve earned characters")
 	check(reloaded.round_state.identities == p.round_state.identities and reloaded.round_state.theme_pool == PeopleCatalog.ALL_THEMES, "active paid board survives a missing/revoked entitlement unchanged")
 	_clear_round(reloaded.round_state)
 	reloaded.advance()
-	check(reloaded.round_state.theme_pool == PeopleCatalog.FREE_THEMES and reloaded.round_state.chosen_theme == -1, "next board respects current entitlement")
+	check(reloaded.round_state.theme_pool == PeopleCatalog.ALL_THEMES and reloaded.round_state.chosen_theme == 6, "all themes and the chosen cast survive a restart")
 
 func _test_peek_rules() -> void:
 	var p: GameProgress = GameProgress.create(51)
 	var m: MatchRound = p.round_state
 	check(not m.begin_peek(true), "opening cannot consume a peek")
 	m.begin_play()
-	check(not m.begin_peek(false), "free players need an earned ad reward")
+	check(m.can_peek(false), "every player can peek offline with no reward or purchase")
 	check(not m.earn_peek("wrong-board"), "stale reward cannot unlock a different board")
 	check(m.earn_peek(m.board_key()) and not m.earn_peek(m.board_key()), "earned callback grants one persisted allowance")
 	m.select(0)
@@ -610,107 +425,4 @@ func _test_peek_rules() -> void:
 	p.advance()
 	check(not p.round_state.peek_used and not p.round_state.peek_earned, "next board gets a fresh allowance, not a banked ad reward")
 	p.round_state.begin_play()
-	check(p.round_state.begin_peek(true), "paid player can peek offline without an ad")
-
-func _test_rewarded_services() -> void:
-	var ads: SimulatedAds = SimulatedAds.new()
-	root.add_child(ads)
-	var rewards: Array[String] = []
-	ads.reward_earned.connect(func(key: String, _request: String) -> void: rewards.append(key))
-	ads.load_rewarded("board-a")
-	check(ads.rewarded_state == "blocked", "rewarded ads honor consent")
-	ads.set_consent_allowed(true)
-	ads.load_rewarded("board-a")
-	await create_timer(0.2).timeout
-	ads.show_rewarded()
-	ads.dismiss_rewarded()
-	check(rewards.is_empty(), "dismissing a rewarded ad never grants its reward")
-	ads.load_rewarded("board-a")
-	await create_timer(0.2).timeout
-	ads.show_rewarded()
-	var old_request: String = ads.reward_request
-	ads.earn_test_reward()
-	ads.earn_test_reward()
-	ads.dismiss_rewarded()
-	check(rewards == ["board-a"], "only the explicit earned callback rewards, exactly once")
-	ads.load_rewarded("board-b")
-	await create_timer(0.2).timeout
-	ads.show_rewarded()
-	ads._deliver_reward(old_request)
-	check(rewards.size() == 1, "old callback cannot award a new board")
-	ads.set_ad_free(true)
-	ads.earn_test_reward()
-	check(rewards.size() == 1 and ads.reward_request.is_empty(), "restored Plus suppresses pending rewarded callbacks")
-	ads.set_ad_free(false)
-	ads.fail_load = true
-	ads.load_rewarded("board-c")
-	await create_timer(0.2).timeout
-	check(ads.rewarded_state == "failure" and rewards.size() == 1, "no-fill grants nothing")
-	ads.fail_load = false
-	ads.load_rewarded("board-c")
-	ads.cancel_rewarded()
-	await create_timer(0.2).timeout
-	check(ads.rewarded_state == "cancelled", "late loading result cannot reopen a cancelled ad")
-	ads.load_rewarded("board-c")
-	await create_timer(0.2).timeout
-	ads.fail_show = true
-	ads.show_rewarded()
-	ads.earn_test_reward()
-	check(ads.rewarded_state == "failure" and rewards.size() == 1, "failed presentation grants nothing")
-	ads.queue_free()
-
-func _test_native_rewarded_callbacks() -> void:
-	var bridge: AdmobBridge = AdmobBridge.new()
-	var sdk: RewardSDKStub = RewardSDKStub.new()
-	var ads: NativeAds = NativeAds.new()
-	root.add_child(bridge)
-	bridge.add_child(sdk)
-	bridge.sdk = sdk
-	root.add_child(ads)
-	ads.bridge = bridge
-	ads.set_consent_allowed(true)
-	var earned: Array[String] = []
-	ads.reward_earned.connect(func(key: String, _request: String) -> void: earned.append(key))
-	ads.load_rewarded("native-a")
-	var late: RewardInfoStub = RewardInfoStub.new()
-	late.id = "late-ad"
-	late.request = sdk.request
-	ads.cancel_rewarded()
-	ads.load_rewarded("native-b")
-	sdk.cached.append(late.id)
-	sdk.rewarded_ad_loaded.emit(late, null)
-	check(ads.rewarded_state == "loading" and sdk.cached.is_empty(), "late native load is discarded by its original request token")
-	var ad: RewardInfoStub = RewardInfoStub.new()
-	ad.id = "current-ad"
-	ad.request = sdk.request
-	sdk.cached.append(ad.id)
-	sdk.rewarded_ad_loaded.emit(ad, null)
-	check(ads.rewarded_state == "ready", "matching native callback makes rewarded ad ready")
-	ads.show_rewarded()
-	check(sdk.shown == ad.id and ads.rewarded_state == "showing", "native display targets the exact ready ad")
-	sdk.rewarded_ad_user_earned_reward.emit(late, null)
-	check(earned.is_empty(), "stale native earned event cannot grant a different board")
-	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
-	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
-	check(earned == ["native-b"], "native SDK earned event grants exactly once")
-	sdk.rewarded_ad_dismissed_full_screen_content.emit(ad)
-	check(ads.rewarded_state == "dismissed" and earned.size() == 1, "native dismissal adds no reward")
-	ads.set_ad_free(true)
-	check(sdk.cached.is_empty(), "restored Plus drains native rewarded cache")
-	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
-	check(earned.size() == 1, "restoration invalidates a late native earned event")
-	ads.set_ad_free(false)
-	ads.load_rewarded("native-c")
-	ad.request = sdk.request
-	sdk.rewarded_ad_failed_to_load.emit(ad, null)
-	check(ads.rewarded_state == "failure", "native load failure remains retryable")
-	ads.load_rewarded("native-c")
-	ad.request = sdk.request
-	sdk.cached.append(ad.id)
-	sdk.rewarded_ad_loaded.emit(ad, null)
-	ads.show_rewarded()
-	sdk.rewarded_ad_failed_to_show_full_screen_content.emit(ad, null)
-	sdk.rewarded_ad_user_earned_reward.emit(ad, null)
-	check(ads.rewarded_state == "failure" and earned.size() == 1, "native presentation failure cannot grant a reward")
-	ads.queue_free()
-	bridge.queue_free()
+	check(p.round_state.begin_peek(true), "new board includes a free offline peek")

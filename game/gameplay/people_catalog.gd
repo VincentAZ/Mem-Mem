@@ -67,11 +67,11 @@ static func characters(theme_id: int) -> Array[int]:
 		result.assign(THEME_CHARACTERS[theme_id])
 	return result
 
-static func available_themes(plus: bool) -> Array[int]:
-	return ALL_THEMES.duplicate() if plus else FREE_THEMES.duplicate()
+static func available_themes(_legacy_plus: bool = true) -> Array[int]:
+	return ALL_THEMES.duplicate()
 
-static func is_unlocked(character: int, plus: bool) -> bool:
-	return character >= 0 and character < COUNT and available_themes(plus).has(theme_of(character))
+static func is_unlocked(character: int, _legacy_plus: bool = true) -> bool:
+	return character >= 0 and character < COUNT and available_themes().has(theme_of(character))
 
 static func theme_name(theme_id: int) -> String:
 	return "Mixed cast" if theme_id < 0 else THEMES[theme_id]

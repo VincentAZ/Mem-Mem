@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Reusable access for Google Play review
 
 Implemented, deployed and saved in Play Console September 23, 2026.

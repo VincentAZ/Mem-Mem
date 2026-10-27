@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Discovery update validation — 0.4.0
 
 Validated locally on 2026-09-20. This is a playable iteration of themed discovery,

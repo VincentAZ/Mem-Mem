@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Mem-Mem privacy policy publication notes
 
 Status: the full policy is published on the native Wix page named

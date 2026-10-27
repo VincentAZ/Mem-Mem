@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Easier matching, 56 characters and Quick Peek — 0.6.0
 
 Validated locally on 2026-09-21. This is a **test integration release**: Google test

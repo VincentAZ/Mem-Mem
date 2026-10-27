@@ -1,153 +1,134 @@
-<h1 align="center">Mem-Mem</h1>
-
-<p align="center"><b>A matching game for grown-ups. No timer, no lives, no pressure.</b><br>
-Flip cards, find the pairs, watch the cast cheer, and build a collection of 56 characters at your own pace.</p>
-
+<h1 align="center">mem·mem</h1>
+<p align="center"><strong>Small boards. Big personalities. Nothing to buy.</strong><br>
+A memory game for grown-ups—with room to breathe and 56 characters to meet.</p>
 <p align="center">
-  <a href="https://play.google.com/store/apps/details?id=io.github.vincentaz.memmem"><b>Get it on Google Play</b></a> ·
-  <a href="docs/architecture.md">How it works</a> ·
-  <a href="docs/privacy-policy.md">Privacy policy</a>
-</p>
-
-<p align="center">
+  <img src="https://img.shields.io/badge/price-free-2e7d61" alt="Free">
+  <img src="https://img.shields.io/badge/ads-none-2e7d61" alt="No ads">
+  <img src="https://img.shields.io/badge/in--app_purchases-none-2e7d61" alt="No in-app purchases">
+  <img src="https://img.shields.io/badge/play-offline-2e7d61" alt="Works offline">
   <img src="https://img.shields.io/badge/Godot-4.7.2-478cbf?logo=godotengine&logoColor=white" alt="Godot 4.7.2">
-  <img src="https://img.shields.io/badge/GDScript-100%25-355570" alt="Written in GDScript">
-  <img src="https://img.shields.io/badge/Android-8%2B-3ddc84?logo=android&logoColor=white" alt="Android 8 and up">
-  <img src="https://img.shields.io/badge/backend-Node%2022%2C%200%20deps-339933?logo=node.js&logoColor=white" alt="Node 22 backend with zero dependencies">
-  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT code license">
 </p>
+<p align="center">
+  <a href="#a-little-look-around">Take a look</a> · <a href="#meet-the-whole-cast">Meet the cast</a> · <a href="#play-from-source">Play from source</a> · <a href="docs/free-edition.md">Free edition notes</a>
+</p>
+<p align="center"><img src="store-assets/feature-graphic.png" alt="Mem-Mem: a cast of illustrated characters cheering beside the game logo" width="100%"></p>
 
-<p align="center"><img src="store-assets/feature-graphic.png" alt="Mem-Mem: a row of illustrated characters cheering beside the game logo" width="100%"></p>
+Flip two cards. Find a pair. Watch the characters celebrate and wander off the board. Clear the last pair and the whole cast returns to cheer you on.
 
-Mem-Mem is a portrait-mode Android memory game built in Godot 4 and GDScript. It is live on Google Play
-(United States) as a free game with an optional one-time **Mem-Mem Plus** purchase. There is no account,
-no analytics, no runtime AI and no leaderboard: your progress and your collection live on your phone.
+**Free to download and use. Every feature included. No ads, purchases, subscriptions, or account.** All seven themes are available from the start, and every board includes one Quick Peek. No internet connection, receipts, or store checks are needed to keep playing.
 
-This repository is the whole thing: the game, the Android consent extension, the purchase-verification
-service, the build and test scripts, the store assets and every setup document written along the way.
+No countdown. No lives to refill. No streak you have to protect. Just a satisfying little board and your next discovery.
 
-## How you play
+> **About Google Play:** this repository contains the free edition. An older version already installed from Google Play may still use the previous Plus/ad model until a new signed build is uploaded and released. The [existing listing](https://play.google.com/store/apps/details?id=io.github.vincentaz.memmem) is separate from the source changes here.
 
-| Do this | And this happens |
-|---|---|
-| Watch the shuffle | The cards land, show their faces for half a second, then flip over. Positions never move. |
-| Tap two cards | A match: both characters light up, celebrate and walk off. A miss: both flip back. |
-| Clear the board | The whole cast walks back in and cheers around your score. Nothing advances until you tap **Next level**. |
-| Finish with 100% accuracy | You earn one **character choice**. Open the collection, pick any character from an unlocked theme, and collect it. |
-| Need another look? | **Quick Peek** shows the remaining cards for half a second, once per board. Free players earn it by watching a rewarded ad; Plus includes one per board. A peek never costs accuracy. |
-| Close the app mid-board | Everything is saved: the exact layout, matched pairs, attempts, score, collection and settings. |
-
-Boards follow a repeating rhythm of **4, 6, 8, 6, 12, 4, 8, 6, 16, 4, 8, 6** cards, so a hard board is
-always followed by an easy one. Each pair is worth 100 points plus an accuracy bonus of up to 20 per pair.
-Mismatches never take points away.
-
-## A look around
+## A little look around
 
 <table>
 <tr>
-<td width="25%"><img src="store-assets/01-match-pairs.png" alt="An eight-card board with two cards face up"><br><sub><b>Match pairs.</b> Every visible character is one exact pair.</sub></td>
-<td width="25%"><img src="store-assets/02-find-a-match.png" alt="A matched pair celebrating before leaving the board"><br><sub><b>Find a match.</b> Matched characters switch to a delighted pose and depart.</sub></td>
-<td width="25%"><img src="store-assets/03-discover-characters.png" alt="The Discover all screen with a theme filter and a selected character"><br><sub><b>Discover characters.</b> Browse all 56, filter by theme, spend a choice.</sub></td>
-<td width="25%"><img src="store-assets/04-dark-mode.png" alt="The same board in dark mode"><br><sub><b>Dark mode.</b> Four backgrounds, light or dark, reduce motion, sound on or off.</sub></td>
+<td width="25%"><img src="store-assets/01-match-pairs.png" alt="An eight-card board with two character cards revealed"><br><sub><b>Find a familiar face.</b> Every character has one exact match.</sub></td>
+<td width="25%"><img src="store-assets/02-find-a-match.png" alt="A matched pair celebrating"><br><sub><b>Enjoy the little wins.</b> Matched characters celebrate before leaving.</sub></td>
+<td width="25%"><img src="store-assets/03-discover-characters.png" alt="The character collection with theme filtering"><br><sub><b>Meet the whole cast.</b> Browse 56 characters and choose who joins your collection.</sub></td>
+<td width="25%"><img src="store-assets/04-dark-mode.png" alt="The game in dark mode"><br><sub><b>Settle in.</b> Light or dark, four backgrounds, your pace.</sub></td>
 </tr>
 </table>
 
-**Seven themes, eight characters each.** Everyday People, Firefighters, Aliens and Golden Years are free.
-Woodland Crew, Snack Squad and Mythical Misfits come with Plus. Unlocked themes rotate from board to
-board with a mixed cast every fifth level, or pin a favorite theme in Settings. Owned characters get gold
-frames and animated cheering poses in **My collection**; tap one and it dances or waves.
+Existing screenshots show earlier builds; any historical Plus wording no longer describes this source edition.
 
-**Mem-Mem Plus** is a single $1.99 purchase: no ads, one Quick Peek on every board, and the three extra
-themes. Plus unlocks characters to *earn*, it does not hand them over. Purchases are verified server-side
-and keep working offline for up to seven days between checks.
+## Simple to start. Lovely to come back to.
 
-## Under the hood
+| Your move | The little payoff |
+| --- | --- |
+| Watch the shuffle | Cards settle into their final positions, reveal for half a second, then turn over. |
+| Tap two cards | A match lights up and celebrates. A miss flips back so you can try again. |
+| Need another look? | **Quick Peek** reveals the remaining cards for half a second, once per board, free and offline. |
+| Clear the board | The cast returns to cheer. Take your time: the next board waits for your tap. |
+| Finish with 100% accuracy | Earn one character choice. Pick an uncollected character from **any** theme. |
+| Take a break | Your exact board, matched pairs, score, collection, and settings are saved. |
 
-| Part | What it is |
-|---|---|
-| `game/gameplay/` | Seeded board generation, matching and scoring rules, progress, the character catalog, and crash-safe saves (two alternating snapshots with SHA-256 checksums) |
-| `game/demo/` | The game screen: shuffle, preview, flips, walking departures, the cheering line-up, and Android lifecycle handling |
-| `game/presentation/` | Shared styles, collection cards, backgrounds, audio, atlas regions and match effects |
-| `game/services/` | One interface for billing, ads and consent with a simulated implementation for desktop and debug builds, and native adapters for the store build |
-| `game/assets/` | Generated character atlases (24 sheets, transparent PNG) and original sound effects |
-| `game/tests/` | Deterministic rule tests, service scenarios, a production-config smoke test and a rendered scene smoke test |
-| `android/consent/` | A small Java extension that runs Google's UMP consent flow and privacy-options form |
-| `server/` | The purchase verifier for Cloud Run: Node 22, no npm dependencies. Verifies and acknowledges Play purchases, issues RSA-signed installation-bound receipts, and redeems the reusable reviewer access code |
-| `scripts/` | Checksum-pinned downloads of the engine, templates, JDK and Android SDK into `.tools/`; debug and signed store builds; emulator, validation and smoke commands |
-| `store-assets/` | The Play icon, feature graphic, screenshots and `app-ads.txt` source |
-| `docs/` | Architecture, store setup, account checklist, cloud deployment, data safety, privacy policy, asset provenance and validation records |
+Boards follow a gentle rhythm of **4, 6, 8, 6, 12, 4, 8, 6, 16, 4, 8, 6** cards. A bigger challenge is followed by an easier board. Each pair earns 100 points plus an accuracy bonus of up to 20 per pair. A mismatch never takes points away, and a Quick Peek never costs accuracy.
 
-Some design points worth knowing:
+## Meet the whole cast
 
-- **Animation never decides anything.** Rules commit matches and scores before any tween runs; a generation
-  counter stops a stale callback from touching a later board.
-- **Entitlements fail closed.** The app trusts only a receipt signed by the verifier, bound to the
-  installation and a nonce, and expiring after seven days. Edited ownership flags and copied receipts are
-  rejected; refunds are picked up on the next check.
-- **Debug and store builds are different exports.** Debug builds simulate purchases and use Google's demo ad
-  units. The store build has no development lab at all, and `build_store.sh` refuses to run until real
-  AdMob IDs, a privacy URL, signing keys and a verifier URL are configured.
-- **Ads are opt-in and non-personalized.** Free players explicitly choose to watch a rewarded ad for a peek;
-  nothing auto-plays. The app requests non-personalized ads and honors the UMP privacy-options form.
+**Seven themes. Eight characters each. All included.**
 
-## Run it
+| Everyday People | Firefighters | Aliens | Golden Years |
+| --- | --- | --- | --- |
+| Familiar faces | Everyday heroes | Visitors with personality | A little more life experience |
 
-Linux x86_64 with Python 3.12+, Node.js 22+, `curl`, `ripgrep` and the usual OpenGL runtime libraries.
-Everything else is downloaded into the ignored `.tools/` directory; your system Java and SDKs are left alone.
-Budget 12–16 GB for the engine, templates, Android SDK, build caches and the optional emulator.
+| Woodland Crew | Snack Squad | Mythical Misfits |
+| --- | --- | --- |
+| Forest friends | A very lively snack break | Creatures with character |
+
+Themes rotate between boards, with a mixed cast every fifth level. Pin a favorite in Settings whenever you want. Collected characters get gold frames and animated cheering poses—tap one and it dances or waves.
+
+All characters are available **to earn**. Perfect boards and your own choices still build the collection; removing payment does not erase the game’s sense of discovery.
+
+## Play from source
+
+The game is Godot 4.7.2 and GDScript. You can open `game/project.godot` in the matching Godot editor and play on a desktop without Android tools. There is no backend to run.
+
+For the scripted Linux x86_64 toolchain, you need Python 3.12+, `curl`, `ripgrep`, and the usual OpenGL runtime libraries. Setup downloads pinned engine, JDK, templates, and Android tools into `.tools/`.
 
 ```bash
-./scripts/setup.sh          # pinned engine, export templates, JDK 17, Android CLI, native plugins
-./scripts/validate.sh       # server, store-build, catalog, audio and headless game tests
-./scripts/run.sh            # play on the desktop (add --editor to open the Godot editor)
+git clone https://github.com/VincentAZ/Mem-Mem.git
+cd Mem-Mem
+./scripts/setup.sh                 # review the Android SDK licenses during setup
+./scripts/validate.sh              # rules, saves, assets, build config, scene smoke
+./scripts/run.sh                   # play; add --editor to open the editor
 ```
 
-### Build for Android
+### Put it on Android
 
 ```bash
-./scripts/build_android.sh                       # debug APK in build/mem-mem-debug.apk
+./scripts/build_android.sh
 source scripts/env.sh
 adb -s YOUR_DEVICE_SERIAL install -r build/mem-mem-debug.apk
-./scripts/share_android.sh                       # or serve the APK to testers over the LAN
-./scripts/emulator.sh                            # or boot the dedicated test emulator
 ```
 
-The debug APK runs on Android 8+ (API 26), targets API 36 and ships arm64-v8a and x86_64 libraries.
-It uses simulated purchases and demo ads and is signed with a local debug key: never publish it.
+The debug APK is `build/mem-mem-debug.apk`, targets API 36, supports Android 8+ (API 26), and includes arm64-v8a and x86_64. **It has the full free feature set.** There are no demo ads, simulated purchases, or advertising consent screens.
 
-The signed store bundle needs a configuration file that is not in the repository. Start from
-[`docs/store-config.example.json`](docs/store-config.example.json), then:
+For a signed Google Play bundle, copy [`docs/store-config.example.json`](docs/store-config.example.json), set the version, and provide the upload-keystore environment variables described in [store setup](docs/store-setup.md):
 
 ```bash
-./scripts/build_store.sh .tools/store/config.json --check   # lists every missing input
-./scripts/build_store.sh .tools/store/config.json           # signed AAB in build/mem-mem-store.aab
+./scripts/build_store.sh .tools/store/config.json --check
+./scripts/build_store.sh .tools/store/config.json
 ```
 
-[Store setup](docs/store-setup.md) walks through the Play Console, AdMob, privacy policy and
-Cloud Run steps; [cloud deployment](docs/cloud-deployment.md) records how the verifier is hosted.
+The AAB is written to `build/mem-mem-store.aab`. Signing is the only external credential requirement: no AdMob IDs, billing products, verifier URL, receipt key, or cloud service. A Play Console release remains a separate publishing step.
 
-### Tests
+## Thoughtful beneath the surface
 
-| Command | Checks |
-|---|---|
-| `./scripts/validate.sh` | `node --test` on the verifier, Python tests for the store build, catalog and audio checks, headless Godot rule and service tests, production-config smoke |
-| `./scripts/smoke_desktop.sh` (or `xvfb-run -a ./scripts/smoke_desktop.sh`) | Drives real pointer input through the rendered scene: full board rhythm, held results, reduced-motion poses, 16-card touch targets, collection animation, rewarded-ad failure and success paths, Plus restrictions. Writes screenshots to `build/screenshots/` |
-| `python3 scripts/smoke_android.py --reset-test-progress` | The same journey on the dedicated test emulator, using positions exported by the desktop smoke |
-| `python3 scripts/smoke_collection.py` | Installs the APK on the emulator and spends one test choice |
+| Where | What happens there |
+| --- | --- |
+| `game/gameplay/` | Seeded board generation, matching, scoring, the full catalog, earned collections, and save validation |
+| `game/demo/` | Shuffle, preview, flips, departures, cheering, Quick Peek, and Android lifecycle handling |
+| `game/presentation/` | Collection cards, shared styles, backgrounds, sound, atlas regions, and celebrations |
+| `game/assets/` | Character atlases, transparent artwork, and sound effects |
+| `game/tests/` | Deterministic gameplay and migration tests, free-edition scene checks, and pointer-driven smoke tests |
+| `scripts/` | Checksum-pinned setup, debug and signed builds, APK auditing, emulator tools, and validation |
+| `store-assets/` | Icon, feature graphic, and screenshots |
 
-Automated tests use separate save files and a fake store, so your own progress is never touched.
-Validation records for each milestone are in [`docs/validation*.md`](docs/validation.md).
+**Your progress comes first.** Two alternating save snapshots carry SHA-256 checksums. Gameplay commits before animation runs, and stale animation callbacks cannot change a later board. Existing saves keep their board, score, collected characters, and earned choices; no purchase migration or reset is needed.
 
-## Art and sound
+**Offline means offline.** The game exports without internet or network-state permissions. Ad SDKs, billing plugins, consent extensions, and the old verification server have been removed.
 
-The character atlases are generated images, copied unchanged with their alpha; the prompts and
-provenance of every sheet are in [`docs/character-art-prompts.json`](docs/character-art-prompts.json).
-Portraits, walking cutouts and cheering poses all reuse the same unmodified art. Sound effects are
-original, and the three crowd reactions are derived from two CC0 recordings. See
-[asset credits](docs/asset-credits.md).
+### Check a change
 
-## License
+```bash
+./scripts/validate.sh
+# With a desktop display, or under xvfb-run:
+./scripts/smoke_desktop.sh
+# With the dedicated test emulator:
+python3 scripts/smoke_android.py --reset-test-progress
+```
 
-The code is open source under the [MIT license](LICENSE). The Mem-Mem name, the Google Play listing, the
-generated character artwork and the store assets are not part of that grant; please use your own name and
-art if you publish a fork.
+Automated game tests use separate save files. APK validation rejects advertising and billing classes and checks native-library alignment. [Free edition notes](docs/free-edition.md) describe compatibility and release checks; earlier milestone documents are historical records.
+
+## Art, sound, and making it yours
+
+Character sheets use generated art with preserved transparency. Portraits, walking cutouts, and cheering poses reuse those sheets. Prompts and provenance live in [character art prompts](docs/character-art-prompts.json); original effects and CC0-derived crowd reactions are documented in [asset credits](docs/asset-credits.md).
+
+Found a rough edge? [Open an issue](https://github.com/VincentAZ/Mem-Mem/issues) with your device, app version, and what happened. Keep save files and personal information out of public reports. Focused fixes and accessibility improvements are welcome.
+
+Code is available under the [MIT license](LICENSE). The Mem-Mem name, generated character artwork, Google Play listing, and store assets are outside that grant; use your own branding and art when publishing a fork.

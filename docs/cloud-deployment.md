@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Mem-Mem verification service
 
 Deployed September 23, 2026 in the separate **Mem-Mem** Google Cloud project

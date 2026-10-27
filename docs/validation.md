@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Collection selection applause — 0.6.1
 
 Validated locally on 2026-09-21. Selecting an eligible character now starts a short

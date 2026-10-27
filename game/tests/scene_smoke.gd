@@ -1,5 +1,5 @@
 extends Node
-## Uses a separate save prefix and fake store; never replaces the player's journey.
+## Uses a separate save prefix; never replaces the player's journey.
 var app: GameScreen
 var failures: int = 0
 var cues: Array[StringName] = []
@@ -290,11 +290,6 @@ func run(screen: GameScreen) -> void:
 	_check(not app.progress.sound and not app.audio.enabled, "sound toggle mutes through actual pointer input")
 	_check(not app.store.load_progress().sound, "sound toggle persists immediately")
 	await _capture("sound-muted")
-	app._open_lab()
-	await _capture("lab")
-	await _escape()
-	_check(not app.lab.visible and app.user_paused, "Escape closes the topmost overlay without resuming play")
-	_check(get_tree().paused, "closing the lab preserves user pause")
 	app._notification(Node.NOTIFICATION_APPLICATION_PAUSED)
 	app._notification(Node.NOTIFICATION_APPLICATION_RESUMED)
 	_check(get_tree().paused, "OS resume preserves user pause")
@@ -356,11 +351,11 @@ func run(screen: GameScreen) -> void:
 	await _capture("fifty-percent-no-reward")
 	var restored_reward: GameProgress = app.store.load_progress()
 	_check(restored_reward != null and restored_reward.collected.is_empty() and restored_reward.choice_tokens == 0, "50 percent result persists without collection ownership")
-	await _test_plus_peek()
+	await _test_free_peek()
 	var layout_file: FileAccess = FileAccess.open("user://smoke-layout.json", FileAccess.WRITE)
 	layout_file.store_string(JSON.stringify(layout))
 	layout_file.close()
-	print("SMOKE PASSED: preview, mismatch, walking, returning cast, cheers, persistent result, explicit Next level, completed save, score, centered score, discoverable settings, 16 cards and returning people, animated owned collection, reduced motion, lifecycle, sound and persistence" if failures == 0 else "SMOKE FAILED: %d failures" % failures)
+	print("SMOKE PASSED: preview, mismatch, walking, returning cast, cheers, persistent result, explicit Next level, completed save, score, centered score, discoverable settings, 16 cards and returning people, animated owned collection, reduced motion, lifecycle, sound, free Quick Peek, all themes and persistence" if failures == 0 else "SMOKE FAILED: %d failures" % failures)
 	for suffix: String in [".0.json", ".1.json", ".0.json.tmp", ".1.json.tmp"]:
 		DirAccess.remove_absolute(app.store.prefix + suffix)
 	get_tree().quit(0 if failures == 0 else 1)
@@ -466,36 +461,12 @@ func _record_layout(key: String, control: Control) -> void:
 	var point: Vector2 = control.global_position + control.size / 2
 	layout[key] = [point.x, point.y]
 
-func _test_plus_peek() -> void:
-	app.billing.reset_simulation()
-	app.use_native_rewarded = false
+func _test_free_peek() -> void:
 	app.progress = GameProgress.create(99303)
 	app._show_level()
 	await _wait_phase("playing")
 	_record_layout("peek", app.peek_button)
-	await _click(app.peek_button.global_position + app.peek_button.size / 2)
-	_check(app.peek_offer.visible and not app.progress.round_state.peek_earned, "free Peek opens an optional offer without granting or showing an ad")
-	_record_layout("watch_ad", app.peek_offer.watch)
-	await _capture("peek-offer")
-	app.ads.fail_load = true
-	await _click(app.peek_offer.watch.global_position + app.peek_offer.watch.size / 2)
-	await get_tree().create_timer(0.25).timeout
-	_check(not app.peek_offer.watch.disabled and not app.progress.round_state.peek_earned, "no-fill keeps retry and continued play available")
-	app.ads.fail_load = false
-	await _click(app.peek_offer.watch.global_position + app.peek_offer.watch.size / 2)
-	await get_tree().create_timer(0.25).timeout
-	_check(app.ad_overlay.visible and app.ads.rewarded_state == "showing", "explicit Watch opens the simulated rewarded placement")
-	_record_layout("earn_ad", app.test_reward_button)
-	app._dismiss_simulated_ad()
-	_check(not app.progress.round_state.peek_earned and not get_tree().paused, "closing without an earned callback grants no peek and returns to play")
-	await _click(app.peek_button.global_position + app.peek_button.size / 2)
-	await _click(app.peek_offer.watch.global_position + app.peek_offer.watch.size / 2)
-	await get_tree().create_timer(0.25).timeout
-	await _capture("test-ad")
-	await _click(app.test_reward_button.global_position + app.test_reward_button.size / 2)
-	_check(app.progress.round_state.peek_earned and not app.progress.round_state.peek_used and not get_tree().paused, "earned ad unlocks Ready without immediately revealing cards")
-	_check(app.tiles.all(func(tile: PortraitTile) -> bool: return not tile.face_up), "returning from the ad does not flash the cards")
-	_check(app.store.load_progress().round_state.peek_earned, "earned ad allowance survives restart")
+	_check(app.peek_button.text.ends_with("Ready"), "free Quick Peek is ready immediately, without an offer")
 	await _tap(0)
 	await get_tree().create_timer(0.25).timeout
 	await _click(app.peek_button.global_position + app.peek_button.size / 2)
@@ -523,29 +494,11 @@ func _test_plus_peek() -> void:
 	app.collection_panel.filters.select(5)
 	app.collection_panel.filters.item_selected.emit(5)
 	await get_tree().process_frame
-	var locked: CollectionCard = app.collection_panel.entries[0] as CollectionCard
-	_check(locked.locked, "paid theme is visibly labeled as locked")
-	await _click(locked.global_position + locked.size / 2)
-	_check(app.upgrade_panel.visible and app.progress.choice_tokens == 1 and app.progress.collected.is_empty(), "locked character opens Plus without consuming a perfect choice")
-	_record_layout("buy_plus", app.upgrade_panel.buy)
-	_record_layout("restore_plus", app.upgrade_panel.restore_button)
-	await _capture("plus")
-	app.billing.outcome = "pending"
-	await _click(app.upgrade_panel.buy.global_position + app.upgrade_panel.buy.size / 2)
-	await get_tree().create_timer(0.25).timeout
-	_check(app.upgrade_panel.buy.disabled and not app.progress.plus_enabled, "pending test purchase leaves all paid benefits locked")
-	app.billing.complete_pending(false)
-	app.billing.outcome = "success"
-	await _click(app.upgrade_panel.buy.global_position + app.upgrade_panel.buy.size / 2)
-	await get_tree().create_timer(0.25).timeout
-	_check(app.progress.plus_enabled and app.ads.ad_free and app.native_ads.ad_free, "successful test purchase grants all Plus benefits together")
-	_check(app.progress.collected.is_empty() and app.progress.choice_tokens == 1, "purchase unlocks eligibility without auto-collecting characters")
-	app._close_upgrade()
-	await get_tree().process_frame
+	_check(not app.collection_panel.entries[0].locked, "Woodland theme is available without a purchase")
 	var unlocked: CollectionCard = app.collection_panel.entries[0] as CollectionCard
 	await _click(unlocked.global_position + unlocked.size / 2)
 	await _click(app.collection_panel.action.global_position + app.collection_panel.action.size / 2)
-	_check(app.progress.collected == [32] and app.progress.choice_tokens == 0, "player can explicitly collect an unlocked paid character")
+	_check(app.progress.collected == [32] and app.progress.choice_tokens == 0, "player can explicitly collect an unlocked free character")
 	await _capture("woodland-collected")
 	app._close_collection()
 	app._next_level()
@@ -558,7 +511,7 @@ func _test_plus_peek() -> void:
 	_check(app.progress.round_state.peeking, "background time does not consume the foreground reveal timer")
 	app._notification(Node.NOTIFICATION_APPLICATION_RESUMED)
 	await _wait_phase("playing")
-	_check(app.progress.round_state.peek_used and app.peek_button.disabled, "paid peek resumes once and cannot repeat")
+	_check(app.progress.round_state.peek_used and app.peek_button.disabled, "free peek resumes once and cannot repeat")
 	# Exercise all new theme silhouettes at the actual sixteen-card size.
 	for theme_id: int in [4, 5, 6]:
 		app.progress.round_state = MatchRound.create(9, app.progress.seed_value, 4, theme_id, 1, PeopleCatalog.ALL_THEMES)
@@ -566,25 +519,16 @@ func _test_plus_peek() -> void:
 		app._checkpoint()
 		app._show_level()
 		await _wait_phase("preview")
-		await _capture("plus-theme-%d-preview" % theme_id)
+		await _capture("free-theme-%d-preview" % theme_id)
 		await _wait_phase("playing")
-		_check(app.tiles.size() == 16 and app.tiles.all(func(tile: PortraitTile) -> bool: return PeopleCatalog.theme_of(tile.variant) == theme_id), "paid theme shows eight distinct pairs at sixteen-card scale")
+		_check(app.tiles.size() == 16 and app.tiles.all(func(tile: PortraitTile) -> bool: return PeopleCatalog.theme_of(tile.variant) == theme_id), "free theme shows eight distinct pairs at sixteen-card scale")
 		app._quick_peek()
 		await get_tree().create_timer(0.3).timeout
-		await _capture("plus-theme-%d-peek" % theme_id)
+		await _capture("free-theme-%d-peek" % theme_id)
 		await _wait_phase("playing")
 		_clear_model(app.progress.round_state)
 		app._checkpoint()
 		app._show_level()
 		await _wait_phase("celebrating")
 		await get_tree().create_timer(1.45).timeout
-		await _capture("plus-theme-%d-cheer" % theme_id)
-	app.billing.reset_simulation()
-
-func run_plus_only(screen: GameScreen) -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	app = screen
-	await _wait_phase("playing")
-	await _test_plus_peek()
-	print("PLUS SMOKE PASSED" if failures == 0 else "PLUS SMOKE FAILED: %d" % failures)
-	get_tree().quit(0 if failures == 0 else 1)
+		await _capture("free-theme-%d-cheer" % theme_id)

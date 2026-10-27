@@ -2,7 +2,7 @@
 set -euo pipefail
 source "$(dirname -- "$0")/env.sh"
 cd "$MEMMEM_ROOT"
-python3 scripts/prepare_consent.py
+python3 scripts/prepare_project.py
 mkdir -p build .tools/keys
 key="$MEMMEM_ROOT/.tools/keys/debug.keystore"
 if [[ ! -f "$key" ]]; then

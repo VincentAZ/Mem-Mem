@@ -1,3 +1,5 @@
+> **Historical record:** this document predates the [fully free edition](free-edition.md). Plus, advertising, billing and verifier setup described below are retired.
+
 # Collection and layout update validation — 0.5.0
 
 Validated locally on 2026-09-20. This release makes collection and appearance

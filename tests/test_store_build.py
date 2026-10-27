@@ -1,89 +1,42 @@
-import json
 import tempfile
 from pathlib import Path
 import sys
 import unittest
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from build_store import validate
 
-
 class StoreBuildTests(unittest.TestCase):
-    def test_missing_inputs_block_release(self):
-        errors, public_key = validate({}, {})
-        self.assertGreaterEqual(len(errors), 10)
-        self.assertEqual(public_key, '')
+    def test_missing_signing_and_version_block_release(self):
+        errors = validate({}, {})
+        self.assertTrue(any('version_code' in e for e in errors))
+        self.assertTrue(any('KEYSTORE' in e for e in errors))
 
-    def test_demo_ids_debug_keys_and_placeholder_urls_block_release(self):
-        errors, _ = validate({
-            'verification_url': 'https://verifier.example/v1/play/verify',
-            'privacy_url': 'http://localhost/privacy',
-            'admob_app_id': 'ca-app-pub-3940256099942544~3347511713',
-            'rewarded_unit_id': 'ca-app-pub-3940256099942544/5224354917',
-            'version_code': 10, 'version_name': 'dev', 'purchase_option': 'buy',
-        }, {'GODOT_ANDROID_KEYSTORE_RELEASE_PATH': '/tmp/debug.keystore',
-            'GODOT_ANDROID_KEYSTORE_RELEASE_USER': 'androiddebugkey'})
-        for field in ('verification_url', 'privacy_url', 'admob_app_id', 'rewarded_unit_id', 'version_code', 'version_name', 'debug certificate'):
-            self.assertTrue(any(field in error for error in errors), field)
-
-    def test_complete_public_configuration_is_accepted(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary)
-            public_key = directory / 'receipt-public.pem'
-            public_key.write_text(json.loads((ROOT / 'build/receipt-fixture.json').read_text())['public_key'])
-            upload = directory / 'upload.jks'
-            upload.touch()  # The CLI separately validates the actual certificate with keytool.
-            app_ads = directory / 'app-ads.txt'
-            app_ads.write_text('google.com, pub-1111111111111111, DIRECT, f08c47fec0942fa0\n')
-            config = {
-                'verification_url': 'https://mem-mem-verifier.run.app/v1/play/verify',
-                'privacy_url': 'https://mem-mem.app/privacy',
-                'admob_app_id': 'ca-app-pub-1111111111111111~1111111111',
-                'rewarded_unit_id': 'ca-app-pub-1111111111111111/1111111111',
-                'purchase_option': 'buy', 'version_code': 11, 'version_name': '0.7.0',
-                'child_directed': True, 'under_age_of_consent': True,
-                'receipt_public_key_file': str(public_key),
-            }
-            errors, pem = validate(config, {
+    def test_no_ads_or_billing_configuration_is_required(self):
+        with tempfile.TemporaryDirectory() as temp:
+            upload = Path(temp) / 'upload.jks'
+            upload.touch()  # CLI independently checks the certificate with keytool.
+            errors = validate({'version_code': 11, 'version_name': '0.7.0'}, {
                 'GODOT_ANDROID_KEYSTORE_RELEASE_PATH': str(upload),
                 'GODOT_ANDROID_KEYSTORE_RELEASE_USER': 'upload',
                 'GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD': 'test-only',
-            }, app_ads_path=app_ads)
+            })
             self.assertEqual(errors, [])
-            self.assertTrue(pem.startswith('-----BEGIN PUBLIC KEY-----'))
 
-    def test_app_ads_publisher_must_match_admob_app_id(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary)
-            config = {'admob_app_id': 'ca-app-pub-1111111111111111~1111111111'}
-            missing = directory / 'missing-app-ads.txt'
-            errors, _ = validate(config, {}, app_ads_path=missing)
-            self.assertTrue(any(str(missing) in error for error in errors))
-            stale = directory / 'app-ads.txt'
-            stale.write_text('google.com, pub-2222222222222222, DIRECT, f08c47fec0942fa0\n')
-            errors, _ = validate(config, {}, app_ads_path=stale)
-            self.assertTrue(any('pub-1111111111111111' in error and str(stale) in error for error in errors))
-            stale.write_text('google.com, pub-1111111111111111, DIRECT, f08c47fec0942fa0\n')
-            errors, _ = validate(config, {}, app_ads_path=stale)
-            self.assertFalse(any(str(stale) in error for error in errors))
+    def test_debug_signing_is_still_rejected(self):
+        errors = validate({'version_code': 10, 'version_name': 'dev'}, {
+            'GODOT_ANDROID_KEYSTORE_RELEASE_PATH': '/tmp/debug.keystore',
+            'GODOT_ANDROID_KEYSTORE_RELEASE_USER': 'androiddebugkey',
+        })
+        for field in ('version_code', 'version_name', 'debug certificate'):
+            self.assertTrue(any(field in e for e in errors))
 
-    def test_repository_app_ads_matches_production_publisher_format(self):
-        from build_store import APP_ADS_PATH
-        lines = [line for line in APP_ADS_PATH.read_text().splitlines() if line.strip()]
-        self.assertEqual(len(lines), 1)
-        self.assertRegex(lines[0], r'^google\.com, pub-\d{16}, DIRECT, f08c47fec0942fa0$')
-        self.assertNotIn('3940256099942544', lines[0])
-
-    def test_non_string_urls_do_not_crash(self):
-        errors, _ = validate({'verification_url': 1, 'privacy_url': []}, {})
-        self.assertTrue(any('verification_url' in error for error in errors))
-        self.assertTrue(any('privacy_url' in error for error in errors))
-
-    def test_verifier_route_cannot_silently_disable_access_codes(self):
-        errors, _ = validate({'verification_url': 'https://mem-mem-verifier.run.app/wrong-route'}, {})
-        self.assertTrue(any('/v1/play/verify endpoint' in error for error in errors))
-
+    def test_android_export_has_no_network_permissions_or_plugins(self):
+        preset = (ROOT / 'game/export_presets.cfg').read_text()
+        self.assertIn('permissions/internet=false', preset)
+        self.assertIn('permissions/access_network_state=false', preset)
+        self.assertNotIn('GodotGooglePlayBilling', (ROOT / 'game/project.godot').read_text())
+        self.assertFalse((ROOT / 'server').exists())
 
 if __name__ == '__main__':
     unittest.main()
