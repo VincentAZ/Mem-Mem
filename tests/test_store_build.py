@@ -16,7 +16,7 @@ class StoreBuildTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             upload = Path(temp) / 'upload.jks'
             upload.touch()  # CLI independently checks the certificate with keytool.
-            errors = validate({'version_code': 11, 'version_name': '0.7.0'}, {
+            errors = validate({'version_code': 12, 'version_name': '0.8.0'}, {
                 'GODOT_ANDROID_KEYSTORE_RELEASE_PATH': str(upload),
                 'GODOT_ANDROID_KEYSTORE_RELEASE_USER': 'upload',
                 'GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD': 'test-only',
@@ -24,7 +24,7 @@ class StoreBuildTests(unittest.TestCase):
             self.assertEqual(errors, [])
 
     def test_debug_signing_is_still_rejected(self):
-        errors = validate({'version_code': 10, 'version_name': 'dev'}, {
+        errors = validate({'version_code': 11, 'version_name': 'dev'}, {
             'GODOT_ANDROID_KEYSTORE_RELEASE_PATH': '/tmp/debug.keystore',
             'GODOT_ANDROID_KEYSTORE_RELEASE_USER': 'androiddebugkey',
         })

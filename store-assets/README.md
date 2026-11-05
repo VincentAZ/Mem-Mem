@@ -1,11 +1,8 @@
 # Google Play listing assets
 
-Prepared September 23, 2026. These files have been visually inspected and pass
-the dimensions and file-size limits shown in Console. All six files are now
-uploaded and saved in the English (US) listing, whose status is **Ready to send
-for review**. The screenshots are ordered 01, 02, 03, 04. The feature graphic and
-four screenshots have per-asset AI labels because they contain generated character
-artwork; the vector monogram icon is unlabeled. No review submission was made.
+Refreshed November 5, 2026 from the free edition. These local assets are ready
+for the next Play listing update; they have not yet been uploaded. The screenshots
+are ordered 01, 02, 03, 04. Character artwork provenance is unchanged.
 
 - `icon.png`: 512×512; the existing SVG monogram on an opaque square background.
   Google Play supplies its own icon mask.
@@ -16,24 +13,13 @@ artwork; the vector monogram icon is unlabeled. No review submission was made.
 - `03-discover-characters.png`: 1080×1920; character browsing after earning a choice.
 - `04-dark-mode.png`: 1080×1920; next-board preview in dark mode.
 
-`app-ads.txt` is not a listing asset and is not uploaded to Play Console. It is
-the source copy of the file served at https://vincentaz.github.io/app-ads.txt
-from the public repo `VincentAZ/VincentAZ.github.io` (added September 26, 2026).
-The served copy is what AdMob crawls; keep both identical, and edit this copy
-first. `scripts/build_store.py` refuses a store build if the publisher id in
-this file does not match `admob_app_id` in the store configuration.
-
-The screenshots are captures of the current game scene rendered by the desktop
-Godot engine at a 9:16 portrait viewport, with production UI selected, rather
-than photographs or mockups. The capture plays a real first round and earns its
-collection choice. No production credentials, simulated purchase controls, or
-unearned Plus access are shown. These captures do not validate Android billing,
-ads, UMP, or final device rendering. Spot-check the signed Android build before
-sending the listing for review.
+The screenshots capture the real game scene rendered by the desktop Godot engine
+at a 9:16 portrait viewport. The capture plays a first round and earns its
+collection choice. All themes and Quick Peek are free; no billing or advertising
+setup is used. Spot-check the signed Android build before release.
 
 The generator lives outside `game/`, so it is not shipped in the app. It uses
-an isolated data directory, unique progress prefix, and separate receipt/identity
-paths. It does not touch existing player or smoke-test saves.
+an isolated data directory and unique progress prefix, preserving player saves.
 
 From the repository root:
 

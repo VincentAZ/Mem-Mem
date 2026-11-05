@@ -26,14 +26,14 @@ No countdown. No lives to refill. No streak you have to protect. Just a satisfyi
 
 <table>
 <tr>
-<td width="25%"><img src="store-assets/01-match-pairs.png" alt="An eight-card board with two character cards revealed"><br><sub><b>Find a familiar face.</b> Every character has one exact match.</sub></td>
+<td width="25%"><img src="store-assets/01-match-pairs.png" alt="A four-card board with character pairs revealed"><br><sub><b>Find a familiar face.</b> Every character has one exact match.</sub></td>
 <td width="25%"><img src="store-assets/02-find-a-match.png" alt="A matched pair celebrating"><br><sub><b>Enjoy the little wins.</b> Matched characters celebrate before leaving.</sub></td>
 <td width="25%"><img src="store-assets/03-discover-characters.png" alt="The character collection with theme filtering"><br><sub><b>Meet the whole cast.</b> Browse 56 characters and choose who joins your collection.</sub></td>
 <td width="25%"><img src="store-assets/04-dark-mode.png" alt="The game in dark mode"><br><sub><b>Settle in.</b> Light or dark, four backgrounds, your pace.</sub></td>
 </tr>
 </table>
 
-Existing screenshots show earlier builds; any historical Plus wording no longer describes this source edition.
+Screenshots show the free edition, refreshed November 5, 2026.
 
 ## Simple to start. Lovely to come back to.
 

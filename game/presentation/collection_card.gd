@@ -41,7 +41,7 @@ func _ready() -> void:
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(name_label)
-	badge = GameStyle.label("COLLECTED" if owned else "PLUS THEME" if locked else "TO DISCOVER", 9)
+	badge = GameStyle.label("COLLECTED" if owned else "TO DISCOVER", 9)
 	badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	badge.add_theme_color_override("font_color", GameStyle.accent() if owned else GamePalette.muted)
@@ -85,7 +85,7 @@ func stop_feedback() -> void:
 		person.stop_reaction()
 		person.cheering = owned
 	if badge != null:
-		badge.text = "COLLECTED" if owned else "PLUS THEME" if locked else "TO DISCOVER"
+		badge.text = "COLLECTED" if owned else "TO DISCOVER"
 
 func _process(delta: float) -> void:
 	tap_cooldown = maxf(0.0, tap_cooldown - delta)

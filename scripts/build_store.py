@@ -14,10 +14,10 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def validate(config, env):
     errors = []
-    if type(config.get('version_code')) is not int or config['version_code'] <= 10:
-        errors.append('version_code: provide an integer above 10 (and above every prior Play upload)')
+    if type(config.get('version_code')) is not int or config['version_code'] <= 11:
+        errors.append('version_code: provide an integer above 11 (and above every prior Play upload)')
     if not re.fullmatch(r'\d+\.\d+\.\d+', str(config.get('version_name', ''))):
-        errors.append('version_name: provide a release version such as 0.7.0')
+        errors.append('version_name: provide a release version such as 0.8.0')
     for name in ('GODOT_ANDROID_KEYSTORE_RELEASE_PATH', 'GODOT_ANDROID_KEYSTORE_RELEASE_USER', 'GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD'):
         if not env.get(name):
             errors.append(f'{name}: required for signing (supply it in the environment)')

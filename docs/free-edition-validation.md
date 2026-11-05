@@ -17,3 +17,14 @@ Godot's rule-test process reports resource-cleanup warnings on exit after all ch
 ## Remaining release work
 
 No physical Android device/emulator gameplay run, signed AAB release, or Play Console update was performed. Use the existing upload key and a version code greater than every prior upload, test the installed-app upgrade without clearing data, then publish the free edition and align the store listing, ads declarations, products and privacy disclosures.
+
+## Release preparation — November 5, 2026
+
+- Confirmed GitHub `main` already contained the free-edition commit `8e660f1`.
+- Re-ran validation: four Python tests, asset checks, 105,367 game checks with zero failures, and production scene smoke passed.
+- Removed stale billing service references from the store screenshot generator and remaining Plus badge copy. Regenerated and visually inspected all four gameplay screenshots.
+- Desktop smoke passed when run separately. An earlier concurrent screenshot/smoke run failed the preview wall-clock timing bound; the isolated run passed without changing that bound.
+- Play Console production remains version 11 (`0.7.0`), whose release notes describe rewarded ads and Plus. The free release is not yet deployed.
+- Deactivated the sole Plus purchase option (`remove_ads` / `buy`) in Play Console; verified **Inactive** and **Your changes have been saved**.
+- Recovered the original upload keystore and signing environment from the documented Secret Manager backup without printing credentials. Local signing checks passed.
+- Prepared version 12 (`0.8.0`). Signed bundle, Android upgrade checks, listing and disclosure updates, and release submission remain pending.

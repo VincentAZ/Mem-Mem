@@ -4,7 +4,6 @@ extends RefCounted
 const VERSION: int = 4
 # The easier wave starts after the current legacy board, never halfway through it.
 var easy_from_level: int = 1
-# Runtime service entitlement; deliberately excluded from game-save ownership.
 # Earlier levels used the old six-board wave; retain its score bounds on migration.
 var expanded_from_level: int = 1
 var seed_value: int = 0

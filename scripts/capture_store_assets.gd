@@ -55,10 +55,7 @@ func _run() -> void:
 	capture_store.prefix = "user://store_capture_progress_%d" % int(Time.get_unix_time_from_system() * 1000000)
 	assert(capture_store.save(fixture))
 	app = load("res://scenes/main.tscn").instantiate() as GameScreen
-	app.monetization.production = true
 	app.store = capture_store
-	app.native_billing.cache_path = "user://store_capture_receipt.json"
-	app.native_billing.identity_path = "user://store_capture_installation.txt"
 	root.add_child(app)
 	await _phase("preview")
 	await _capture("01-match-pairs")
