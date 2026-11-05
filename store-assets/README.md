@@ -1,8 +1,8 @@
 # Google Play listing assets
 
-Refreshed November 5, 2026 from the free edition. These local assets are ready
-for the next Play listing update; they have not yet been uploaded. The screenshots
-are ordered 01, 02, 03, 04. Character artwork provenance is unchanged.
+Refreshed November 5, 2026 from the free edition. The four screenshots were uploaded and
+saved in the pending Play listing update. Local filenames use the sequence
+01, 02, 03, 04; the current Console order is 02, 04, 03, 01. Character artwork provenance is unchanged.
 
 - `icon.png`: 512×512; the existing SVG monogram on an opaque square background.
   Google Play supplies its own icon mask.

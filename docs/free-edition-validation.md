@@ -14,7 +14,7 @@
 
 Godot's rule-test process reports resource-cleanup warnings on exit after all checks pass. The rendered desktop run used the dummy audio fallback because the build environment has no audio device; sound event and persistence checks passed.
 
-## Remaining release work
+## Release work outstanding on October 27
 
 No physical Android device/emulator gameplay run, signed AAB release, or Play Console update was performed. Use the existing upload key and a version code greater than every prior upload, test the installed-app upgrade without clearing data, then publish the free edition and align the store listing, ads declarations, products and privacy disclosures.
 
@@ -28,3 +28,17 @@ No physical Android device/emulator gameplay run, signed AAB release, or Play Co
 - Deactivated the sole Plus purchase option (`remove_ads` / `buy`) in Play Console; verified **Inactive** and **Your changes have been saved**.
 - Recovered the original upload keystore and signing environment from the documented Secret Manager backup without printing credentials. Local signing checks passed.
 - Prepared version 12 (`0.8.0`). Signed bundle, Android upgrade checks, listing and disclosure updates, and release submission remain pending.
+
+## Signed release validation — November 5, 2026
+
+- Final game source: `64168f2`; version 12 (`0.8.0`). Four Python tests, asset checks, **105,368 Godot checks with zero failures**, and production scene smoke passed.
+- Pointer-driven desktop smoke passed in isolation without relaxing its timing assertions.
+- Full API 35 Android emulator gameplay smoke passed: levels 1–10, scoring, collection, free Quick Peek, settings, offline play, persistence, animation and reduced motion, with no Godot errors or fatal exceptions. An earlier run encountered a Godot shader-cache read error; the complete rerun passed after the cache was warmed. A startup race in the test was fixed by waiting for the expected persisted state.
+- Signed AAB passed bundletool validation. Its manifest requests only vibration; it contains no internet, advertising-ID or billing permissions. APK inspection found no ad, billing or UMP classes. Signature and 16 KB alignment checks passed.
+- AAB SHA-256: `6e48846793aaeab833b00a6231af6645b9f48d7d36e96f321cb1755fcc65f0a0`.
+- Installed the APK generated from that exact AAB over the upload-key-signed test APK without clearing data. Both save files were byte-identical immediately after installation; after launch, the newest saved payload was unchanged (level 10, 4,180 points, seven choices, collection and settings). Release startup logs contained no Godot errors or fatal exceptions. This verifies the test-build-to-release installation; legacy save migration is covered by the Godot tests rather than an installed 0.7.0 binary.
+- Published version 12 to internal testing; Play Console confirms **Available to internal testers**. Play reported no lost supported devices. Its two non-blocking warnings concern optional deobfuscation files and native debug symbols.
+- Uploaded the four free-edition screenshots and saved the new listing, no-ads, no-advertising-ID, no-data-collection/sharing, unrestricted-access and privacy-policy declarations for review.
+- Public privacy policy: https://vincentaz.github.io/Mem-Mem/privacy-policy.html (published with GitHub Pages and verified against the committed HTML).
+- Saved the production release for a 100% rollout to all targeted countries. It is pending submission while automated quick checks run and the content rating is updated. Existing ratings still declare in-game purchases; the new questionnaire requires explicit acceptance of IARC terms.
+- Verified Play app pricing explicitly states the app is free and cannot be changed to paid.
