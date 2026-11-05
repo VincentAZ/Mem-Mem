@@ -168,6 +168,7 @@ completed = snapshot()
 verify(len(completed['round']['removed']) == 4 and completed['round']['attempts'] == 4, 'complete board records two matches in four comparisons: exactly 50 percent')
 # Kill before choosing Next: restore this result and wait for explicit input.
 restart()
+wait_for(lambda s: s['reward_level'] == 1)
 verify(snapshot()['round'] == completed['round'] and snapshot()['banked_points'] == completed['banked_points'], 'completed level survives restart without advancing or changing score')
 verify(snapshot()['reward_level'] == 1 and snapshot()['choice_tokens'] == 0 and not snapshot()['collected'], '50 percent completion earns no choice and never auto-collects')
 completed = snapshot()

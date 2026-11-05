@@ -43,7 +43,7 @@ func collect_character(character: int) -> bool:
 static func create(seed_number: int) -> GameProgress:
 	var result: GameProgress = GameProgress.new()
 	result.seed_value = seed_number
-	result.round_state = MatchRound.create(1, seed_number)
+	result.round_state = MatchRound.create(1, seed_number, 4, -1, 1, PeopleCatalog.available_themes())
 	return result
 
 func total_points() -> int:

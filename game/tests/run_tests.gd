@@ -388,6 +388,7 @@ func _test_easier_boards() -> void:
 				check(restored.round_state.identities.size() == 4, "all migrated players enter the easier wave with four cards")
 				check(GameProgress.from_snapshot(restored.snapshot()) != null, "score bounds preserve all three historical generations")
 	var p: GameProgress = GameProgress.create(27)
+	check(p.round_state.theme_pool == PeopleCatalog.ALL_THEMES, "a new journey includes every theme from its first board")
 	_clear_round(p.round_state)
 	p.settle_collection_reward()
 	check(p.collect_character(55) and p.collected == [55], "every character can be collected without a purchase")

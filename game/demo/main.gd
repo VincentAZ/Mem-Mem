@@ -656,6 +656,9 @@ func _build_pause() -> void:
 	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(rules)
 	column.add_child(_button("Your collection", _open_collection))
+	column.add_child(_button("Privacy policy ↗", func() -> void:
+		OS.shell_open("https://vincentaz.github.io/Mem-Mem/privacy-policy.html")
+	))
 	pause_menu.hide()
 
 func _settings_section(parent: VBoxContainer, caption: String) -> VBoxContainer:
