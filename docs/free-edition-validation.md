@@ -18,16 +18,16 @@ Godot's rule-test process reports resource-cleanup warnings on exit after all ch
 
 No physical Android device/emulator gameplay run, signed AAB release, or Play Console update was performed. Use the existing upload key and a version code greater than every prior upload, test the installed-app upgrade without clearing data, then publish the free edition and align the store listing, ads declarations, products and privacy disclosures.
 
-## Release preparation — November 5, 2026
+## Initial release preparation — November 5, 2026
 
 - Confirmed GitHub `main` already contained the free-edition commit `8e660f1`.
 - Re-ran validation: four Python tests, asset checks, 105,367 game checks with zero failures, and production scene smoke passed.
 - Removed stale billing service references from the store screenshot generator and remaining Plus badge copy. Regenerated and visually inspected all four gameplay screenshots.
 - Desktop smoke passed when run separately. An earlier concurrent screenshot/smoke run failed the preview wall-clock timing bound; the isolated run passed without changing that bound.
-- Play Console production remains version 11 (`0.7.0`), whose release notes describe rewarded ads and Plus. The free release is not yet deployed.
+- At the start of preparation, Play Console production was version 11 (`0.7.0`), whose release notes describe rewarded ads and Plus. The free release had not yet been deployed.
 - Deactivated the sole Plus purchase option (`remove_ads` / `buy`) in Play Console; verified **Inactive** and **Your changes have been saved**.
 - Recovered the original upload keystore and signing environment from the documented Secret Manager backup without printing credentials. Local signing checks passed.
-- Prepared version 12 (`0.8.0`). Signed bundle, Android upgrade checks, listing and disclosure updates, and release submission remain pending.
+- Prepared version 12 (`0.8.0`). At this stage, the signed bundle, Android upgrade checks, listing and disclosure updates, and release submission were still pending.
 
 ## Signed release validation — November 5, 2026
 
@@ -40,5 +40,13 @@ No physical Android device/emulator gameplay run, signed AAB release, or Play Co
 - Published version 12 to internal testing; Play Console confirms **Available to internal testers**. Play reported no lost supported devices. Its two non-blocking warnings concern optional deobfuscation files and native debug symbols.
 - Uploaded the four free-edition screenshots and saved the new listing, no-ads, no-advertising-ID, no-data-collection/sharing, unrestricted-access and privacy-policy declarations for review.
 - Public privacy policy: https://vincentaz.github.io/Mem-Mem/privacy-policy.html (published with GitHub Pages and verified against the committed HTML).
-- Saved the production release for a 100% rollout to all targeted countries. It is pending submission while automated quick checks run and the content rating is updated. Existing ratings still declare in-game purchases; the new questionnaire requires explicit acceptance of IARC terms.
+- Saved the production release for a 100% rollout to all targeted countries.
 - Verified Play app pricing explicitly states the app is free and cannot be changed to paid.
+
+## Production submission — November 5, 2026
+
+- With explicit user approval, accepted the IARC Terms of Use and saved the new questionnaire declaring no digital purchases. The rating summary no longer lists **In-Game Purchases**; it shows ESRB Everyone, PEGI 3 and Brazil All ages.
+- Submitted all seven changes together: production version 12 (`0.8.0`) for full rollout, store description, phone screenshots, content rating, privacy-policy URL, ads declaration and Data safety.
+- Play Console publishing overview now shows **Changes in review**. Automated quick checks are running, with up to 14 minutes indicated; the page says the changes will be sent for review after those checks complete successfully. This is submission evidence, not review approval or proof that the free edition is publicly live.
+- Managed publishing is **off**. Unrestricted sign-in access and the **No** Advertising ID declaration are acknowledged as informational declarations for review.
+- Remaining deployment verification: confirm successful quick checks, Google review approval and production availability of version 12 with the updated listing and disclosures.
